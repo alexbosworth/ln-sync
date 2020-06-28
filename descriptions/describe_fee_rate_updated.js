@@ -42,7 +42,7 @@ module.exports = (args, cbk) => {
           return cbk([400, 'ExpectedPublicKeyToDescribeFeeRateUpdated']);
         }
 
-        if (!args.updated) {
+        if (args.updated === undefined) {
           return cbk([400, 'ExpectedUpdatedBaseFeeToDescribeFeeRateUpdated']);
         }
 
