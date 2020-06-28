@@ -1,0 +1,38 @@
+{
+  "author": "Alex Bosworth",
+  "bugs": {
+    "url": "https://github.com/alexbosworth/ln-sync/issues"
+  },
+  "description": "LN metadata persistance methods",
+  "dependencies": {
+    "async": "3.2.0",
+    "asyncjs-util": "1.2.2",
+    "cbor": "5.0.2",
+    "colorette": "1.2.0",
+    "ln-service": "49.1.1",
+    "node-lmdb": "0.9.2"
+  },
+  "devDependencies": {
+    "rimraf": "3.0.2",
+    "tap": "14.10.7"
+  },
+  "engines": {
+    "node": ">=10.4.0"
+  },
+  "keywords": [
+    "lnd",
+    "lightning",
+    "lightning-network"
+  ],
+  "license": "MIT",
+  "main": "index.js",
+  "name": "ln-sync",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alexbosworth/ln-sync.git"
+  },
+  "scripts": {
+    "test": "tap test/database_integration/*.js"
+  },
+  "version": "0.0.1"
+}
