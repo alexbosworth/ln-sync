@@ -15,7 +15,7 @@ const openDb = (env, mapSize, path) => env.open({mapSize, path, maxDbs: 256});
 
   {
     fs: {
-      makeDirectory: <Make Directory Function>
+      getFileStatus: <Get File Status Function>
     }
     path: <LMDB Database Path String>
     table: <LMDB Table Name String>
@@ -46,14 +46,6 @@ module.exports = ({fs, path, table}) => {
       // Exit early with error when an unexpected error occurs
       if (err.message !== notFound) {
         throw [503, 'UnexpectedErrorOpeningLmdbDatabase', {err}];
-      }
-    }
-
-    try {
-      fs.makeDirectory(path);
-    } catch (err) {
-      if (err.code !== 'EEXIST') {
-        throw [503, 'UnexpectedErrorCreatingDirectoryForDatabase', {err}];
       }
     }
 

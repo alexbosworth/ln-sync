@@ -1,3 +1,6 @@
+const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
+
 const getLmdbItem = require('./get_lmdb_item');
 const openLmdbDatabase = require('./open_lmdb_database');
 const putLmdbItem = require('./put_lmdb_item');
@@ -8,12 +11,13 @@ const updateLmdbItem = require('./update_lmdb_item');
 
   {
     fs: {
+      getFileStatus: <Get File Status Function>
       makeDirectory: <Make Directory Function>
     }
     path: <LMDB Database Path String>
   }
 
-  @returns
+  @returns via cbk or Promise
   {
     db: {
       getItem: <Get Item Function> ({key, table}, cbk) => {}
@@ -22,47 +26,72 @@ const updateLmdbItem = require('./update_lmdb_item');
     }
   }
 */
-module.exports = ({fs, path}) => {
-  if (!fs) {
-    throw new Error('ExpectedFileSystemMethodsForLmdbDatabase');
-  }
+module.exports = ({fs, path}, cbk) => {
+  return new Promise((resolve, reject) => {
+    return asyncAuto({
+      // Check arguments
+      validate: cbk => {
+        if (!fs) {
+          return cbk([400, 'ExpectedFileSystemMethodsForLmdbDatabase']);
+        }
 
-  if (!path) {
-    throw new Error('ExpectedFileSystemPathForLmdbDatabase');
-  }
+        if (!path) {
+          return cbk([400, 'ExpectedFileSystemPathForLmdbDatabase']);
+        }
 
-  const openDb = table => openLmdbDatabase({fs, path, table}).db;
+        return cbk();
+      },
 
-  return {
-    db: {
-      getItem: ({key, table}, cbk) => {
-        try {
-          return getLmdbItem({key, db: openDb(table)}, cbk);
-        } catch (err) {
-          return cbk([503, 'FailedToOpenDatabaseToGetItem', {err}]);
-        }
-      },
-      putItem: ({fresh, key, record, table}, cbk) => {
-        try {
-          return putLmdbItem({fresh, key, record, db: openDb(table)}, cbk);
-        } catch (err) {
-          return cbk([503, 'FailedToOpenDatabaseToPutItem', {err}]);
-        }
-      },
-      query: ({table, where}, cbk) => {
-        try {
-          return queryLmdb({where, db: openDb(table)}, cbk);
-        } catch (err) {
-          return cbk([503, 'FailedToOpenDatabaseToQueryLmdb', {err}]);
-        }
-      },
-      updateItem: ({key, changes, expect, table}, cbk) => {
-        try {
-          return updateLmdbItem({changes, expect, key, db: openDb(table)}, cbk);
-        } catch (err) {
-          return cbk([503, 'FailedToOpenDatabaseToUpdateLmdbItem', {err}]);
-        }
-      },
+      // Make sure there is a home directory
+      confirmHomeDir: ['validate', ({}, cbk) => {
+        return fs.makeDirectory(path, () => {
+          // Ignore errors when making directory, it may already be present
+          return cbk();
+        });
+      }],
+
+      // Database object
+      db: ['confirmHomeDir', ({}, cbk) => {
+        const openDb = table => openLmdbDatabase({fs, path, table}).db;
+
+        return cbk(null, {
+          db: {
+            getItem: ({key, table}, cbk) => {
+              try {
+                return getLmdbItem({key, db: openDb(table)}, cbk);
+              } catch (err) {
+                return cbk([503, 'FailedToOpenDatabaseToGetItem', {err}]);
+              }
+            },
+            putItem: ({fresh, key, record, table}, cbk) => {
+              try {
+                const db = openDb(table);
+
+                return putLmdbItem({db, fresh, key, record}, cbk);
+              } catch (err) {
+                return cbk([503, 'FailedToOpenDatabaseToPutItem', {err}]);
+              }
+            },
+            query: ({table, where}, cbk) => {
+              try {
+                return queryLmdb({where, db: openDb(table)}, cbk);
+              } catch (err) {
+                return cbk([503, 'FailedToOpenDatabaseToQueryLmdb', {err}]);
+              }
+            },
+            updateItem: ({key, changes, expect, table}, cbk) => {
+              try {
+                const db = openDb(table);
+
+                return updateLmdbItem({changes, db, expect, key}, cbk);
+              } catch (err) {
+                return cbk([503, 'FailedToOpenDbToUpdateLmdbItem', {err}]);
+              }
+            },
+          },
+        });
+      }],
     },
-  };
+    returnResult({reject, resolve, of: 'db'}, cbk));
+  });
 };

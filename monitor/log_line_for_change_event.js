@@ -14,6 +14,7 @@ const styledSubject = require('./styled_subject');
       subject: <Subject String>
     }
     event: <Event Name String>
+    mode: <Logging Mode String>
   }
 
   @returns
@@ -21,8 +22,12 @@ const styledSubject = require('./styled_subject');
     [line]: <Log Line String>
   }
 */
-module.exports = ({description, event}) => {
+module.exports = ({description, event, mode}) => {
   if (!description) {
+    return {};
+  }
+
+  if (mode === 'local' && !description.is_local) {
     return {};
   }
 

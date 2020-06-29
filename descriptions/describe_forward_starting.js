@@ -22,7 +22,7 @@ const shortKey = key => key.substring(0, 16);
     [description]: {
       action: <Action String>
       detail: <Detail String>
-      is_local: <Is Local Failure Bool>
+      is_local: <Is Local Bool>
       subject <Subject String>
     }
   }
@@ -93,6 +93,7 @@ module.exports = (args, cbk) => {
           description: {
             action: `forward of ${mtokensAsBig(args.mtokens)} starting`,
             detail: `from ${inName} to ${outName}`,
+            is_local: true,
             subject: getForwardingNode.alias || shortKey(args.public_key),
           },
         });

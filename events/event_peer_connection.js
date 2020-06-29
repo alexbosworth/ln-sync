@@ -1,5 +1,6 @@
 const asyncRetry = require('async/retry');
 
+const {syncNode} = require('./../sync');
 const {syncPeer} = require('./../sync');
 
 const interval = () => Math.round(Math.random() * 1e5);
@@ -19,6 +20,8 @@ const times = 20;
 */
 module.exports = async ({db, emitter, id, lnd, node}) => {
   return await asyncRetry({interval, times}, async () => {
+    await syncNode({db, id, lnd});
+
     const synced = await syncPeer({db, id, lnd});
 
     if (!!synced.updates && !!synced.previous.is_connected) {

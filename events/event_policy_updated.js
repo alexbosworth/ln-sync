@@ -1,6 +1,8 @@
+const asyncEach = require('async/each');
 const asyncRetry = require('async/retry');
 
 const {syncChannelPolicy} = require('./../sync');
+const {syncNode} = require('./../sync');
 
 const interval = () => Math.round(Math.random() * 1e5);
 const times = 1e3;
@@ -23,6 +25,10 @@ module.exports = async (args) => {
   const [key] = args.public_keys;
 
   return await asyncRetry({interval, times}, async () => {
+    await asyncEach(args.public_keys, async node => {
+      return await syncNode({db: args.db, id: node, lnd: args.lnd});
+    });
+
     const synced = await syncChannelPolicy({
       id,
       db: args.db,

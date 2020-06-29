@@ -24,7 +24,7 @@ const shortKey = key => key.substring(0, 16);
     [description]: {
       action: <Action String>
       detail: <Detail String>
-      is_local: <Is Local Failure Bool>
+      is_local: <Is Local Bool>
       subject <Subject String>
     }
   }
