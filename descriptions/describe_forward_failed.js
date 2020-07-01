@@ -98,7 +98,7 @@ module.exports = (args, cbk) => {
           description: {
             action: `forward of ${total} failed (${fail})`,
             detail: `from ${inName} to ${outName}`,
-            is_local: !!args.internal_failure,
+            is_local: true,
             subject: getForwardingNode.alias || shortKey(args.public_key),
           },
         });

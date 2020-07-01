@@ -23,6 +23,8 @@ const table = 'table';
 return test('LMDB Database Update Item', async ({deepIs, end, rejects}) => {
   const path = join(tmpdir(), randomDir());
 
+  mkdirSync(path);
+
   await putLmdbItem({
     key,
     record,
