@@ -1,5 +1,6 @@
 const EventEmitter = require('events');
 
+const asyncDoUntil = require('async/doUntil');
 const {getNetworkGraph} = require('ln-service');
 const {getWalletInfo} = require('ln-service');
 const {subscribeToChannels} = require('ln-service');
@@ -10,6 +11,8 @@ const {subscribeToPeers} = require('ln-service');
 const emitError = require('./emit_error');
 const subscribeToForwards = require('./subscribe_to_forwards');
 const syncFromDataEvents = require('./sync_from_data_events');
+
+const subRestartDelayMs = 1000 * 5;
 
 /** Subscribe to changes
 
@@ -41,29 +44,47 @@ module.exports = ({db, lnd}) => {
 
   const emitter = new EventEmitter();
 
-  const blocks = subscribeToBlocks({lnd});
-  const channels = subscribeToChannels({lnd});
-  const {forwards} = subscribeToForwards({lnd});
-  const graph = subscribeToGraph({lnd});
-  const peers = subscribeToPeers({lnd});
+  asyncDoUntil(
+    cbk => {
+      const blocks = subscribeToBlocks({lnd});
+      const channels = subscribeToChannels({lnd});
+      const {forwards} = subscribeToForwards({lnd});
+      const graph = subscribeToGraph({lnd});
+      const peers = subscribeToPeers({lnd});
 
-  blocks.on('error', err => emitError({emitter, err}));
-  channels.on('error', err => emitError({emitter, err}));
-  forwards.on('error', err => emitError({emitter, err}));
-  graph.on('error', err => emitError({emitter, err}));
-  peers.on('error', err => emitError({emitter, err}));
+      const subs = [blocks, channels, forwards, graph, peers];
 
-  syncFromDataEvents({
-    blocks,
-    channels,
-    db,
-    emitter,
-    forwards,
-    graph,
-    lnd,
-    peers,
-  },
-  err => emitError({emitter, err: [503, 'UnexpectedDataEventsError', {err}]}));
+      subs.forEach(sub => {
+        sub.on('error', () => {
+          // Eliminate other listeners to prevent duplicate events
+          subs.forEach(n => n.removeAllListeners());
+
+          // Restart the subscription
+          return setTimeout(cbk, subRestartDelayMs);
+        });
+      });
+
+      syncFromDataEvents({
+        blocks,
+        channels,
+        db,
+        emitter,
+        forwards,
+        graph,
+        lnd,
+        peers,
+      },
+      err => emitError({emitter, err: [503, 'UnexpectedSyncError', {err}]}));
+    },
+    cbk => cbk(null, !emitter.listenerCount('error')),
+    err => {
+      if (!!err) {
+        return emitError({emitter, err: [503, 'UnexpectedChangesErr', {err}]});
+      }
+
+      return;
+    }
+  );
 
   return emitter;
 };

@@ -14,6 +14,8 @@ const eventPeerConnection = require('./event_peer_connection');
 const eventPolicyUpdated = require('./event_policy_updated');
 const eventReceiveHtlc = require('./event_receive_htlc');
 
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+const flutterDelayMs = 1000 * 90;
 const peerConnectionEvents = ['connected', 'disconnected'];
 
 /** Keep the local db using data event streams
@@ -134,6 +136,8 @@ module.exports = (args, cbk) => {
       // Sync channels
       syncChannels: ['getPublicKey', ({getPublicKey}, cbk) => {
         args.channels.on('channel_active_changed', async change => {
+          await delay(flutterDelayMs);
+
           try {
             return await eventChannelActive({
               db: args.db,
@@ -229,6 +233,8 @@ module.exports = (args, cbk) => {
       syncPeers: ['getPublicKey', ({getPublicKey}, cbk) => {
         peerConnectionEvents.forEach(event => {
           args.peers.on(event, async peer => {
+            await delay(flutterDelayMs);
+
             try {
               return await eventPeerConnection({
                 db: args.db,

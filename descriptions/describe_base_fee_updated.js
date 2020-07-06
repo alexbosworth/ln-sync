@@ -3,6 +3,8 @@ const {returnResult} = require('asyncjs-util');
 
 const {getGraphPair} = require('./../graph');
 
+const {isArray} = Array;
+const isIntersecting = (arr1, arr2) => !!arr1.find(n => arr2.includes(n));
 const mtokensAsBig = mtokens => (Number(mtokens) / 1e11).toFixed(11);
 const shortKey = key => key.substring(0, 16);
 
@@ -11,6 +13,7 @@ const shortKey = key => key.substring(0, 16);
   {
     db: <Database Object>
     id: <Channel Id String>
+    local_keys: [<Local Public Key Hex String>]
     [previous]: <Previous Base Fee Millitokens String>
     public_key: <Policy Author Public Key Hex String>
     updated: <Updated Base Fee Millitokens String>
@@ -21,6 +24,7 @@ const shortKey = key => key.substring(0, 16);
     [description]: {
       action: <Action String>
       detail: <Detail String>
+      is_local: <Is Local Event Bool>
       subject: <Subject String>
     }
   }
@@ -36,6 +40,10 @@ module.exports = (args, cbk) => {
 
         if (!args.id) {
           return cbk([400, 'ExpectedIdToDescribeBaseFeeUpdated']);
+        }
+
+        if (!isArray(args.local_keys)) {
+          return cbk([400, 'ExpectedLocalKeysToDescribeBaseFeeUpdated']);
         }
 
         if (!args.public_key) {
@@ -72,6 +80,7 @@ module.exports = (args, cbk) => {
           description: {
             action: `changed fee`,
             detail: `to ${peer.alias || shortKey(peer.id)} ${detail}`,
+            is_local: isIntersecting(args.local_keys, [author.id, peer.id]),
             subject: `${author.alias || shortKey(author.id)}`,
           },
         });

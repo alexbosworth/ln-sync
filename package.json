@@ -8,8 +8,8 @@
     "async": "3.2.0",
     "asyncjs-util": "1.2.2",
     "cbor": "5.0.2",
-    "colorette": "1.2.0",
-    "ln-service": "49.1.2",
+    "colorette": "1.2.1",
+    "ln-service": "49.2.1",
     "node-lmdb": "0.9.2"
   },
   "devDependencies": {
@@ -34,5 +34,5 @@
   "scripts": {
     "test": "tap test/database_integration/*.js"
   },
-  "version": "0.0.3"
+  "version": "0.0.4"
 }
