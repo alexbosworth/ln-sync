@@ -4,7 +4,7 @@ const {Env} = require('node-lmdb');
 
 const dbFile = 'data.mdb';
 const dbFullErrorMessage = 'MDB_MAP_FULL: Environment mapsize limit reached';
-const dbIncrementBytes = 1e6;
+const dbIncrementBytes = 5e6;
 const {ceil} = Math;
 const notFound = 'No such file or directory';
 const openDb = (env, mapSize, path) => env.open({mapSize, path, maxDbs: 256});
