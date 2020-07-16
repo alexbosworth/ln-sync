@@ -74,7 +74,14 @@ module.exports = ({db, lnd}) => {
         lnd,
         peers,
       },
-      err => emitError({emitter, err: [503, 'UnexpectedSyncError', {err}]}));
+      err => {
+        if (!!err) {
+          emitError({emitter, err: [503, 'UnexpectedSyncError', {err}]});
+        }
+
+        // Restart the subscription
+        return setTimeout(() => cbk(), subRestartDelayMs);
+      });
     },
     cbk => cbk(null, !emitter.listenerCount('error')),
     err => {

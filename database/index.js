@@ -3,6 +3,7 @@ const lmdbDatabase = require('./lmdb_database');
 const openLmdbDatabase = require('./open_lmdb_database');
 const putLmdbItem = require('./put_lmdb_item');
 const queryLmdb = require('./query_lmdb');
+const removeLmdbItem = require('./remove_lmdb_item');
 const updateLmdbItem = require('./update_lmdb_item');
 
 module.exports = {
@@ -11,5 +12,6 @@ module.exports = {
   openLmdbDatabase,
   putLmdbItem,
   queryLmdb,
+  removeLmdbItem,
   updateLmdbItem,
 };

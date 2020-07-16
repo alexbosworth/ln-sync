@@ -5,7 +5,7 @@ const {statSync} = require('fs');
 const {tmpdir} = require('os');
 
 const rimraf = require('rimraf');
-const {test} = require('tap');
+const {test} = require('@alexbosworth/tap');
 
 const {getLmdbItem} = require('./../../database');
 const {openLmdbDatabase} = require('./../../database');

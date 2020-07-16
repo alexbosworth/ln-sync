@@ -5,6 +5,7 @@ const getLmdbItem = require('./get_lmdb_item');
 const openLmdbDatabase = require('./open_lmdb_database');
 const putLmdbItem = require('./put_lmdb_item');
 const queryLmdb = require('./query_lmdb');
+const removeLmdbItem = require('./remove_lmdb_item');
 const updateLmdbItem = require('./update_lmdb_item');
 
 /** Get LMDB Database object
@@ -77,6 +78,13 @@ module.exports = ({fs, path}, cbk) => {
                 return queryLmdb({where, db: openDb(table)}, cbk);
               } catch (err) {
                 return cbk([503, 'FailedToOpenDatabaseToQueryLmdb', {err}]);
+              }
+            },
+            removeItem: ({key, table}, cbk) => {
+              try {
+                return removeLmdbItem({key, db: openDb(table)}, cbk);
+              } catch (err) {
+                return cbk([503, 'FailedToOpenDatabaseToRemoveItem', {err}]);
               }
             },
             updateItem: ({key, changes, expect, table}, cbk) => {

@@ -53,7 +53,7 @@ module.exports = ({db, from, node}, cbk) => {
       description: ['getNode', 'getPeer', ({getNode, getPeer}, cbk) => {
         return cbk(null, {
           description: {
-            action: `disconnected from ${getPeer.alias}`,
+            action: `disconnected from ${getPeer.alias}`.trim(),
             detail: `${getPeer.id}`,
             is_local: true,
             subject: `${getNode.alias || shortKey(getNode.id)}`,

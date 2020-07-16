@@ -46,7 +46,7 @@ module.exports = ({db, keys, limit, where}, cbk) => {
       // Check arguments
       validate: cbk => {
         if (!db) {
-          throw new Error('ExpectedDbToQueryLmdb');
+          return cbk([400, 'ExpectedDbToQueryLmdb']);
         }
 
         return cbk();
