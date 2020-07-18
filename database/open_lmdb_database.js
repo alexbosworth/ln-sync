@@ -6,8 +6,6 @@ const dbFile = 'data.mdb';
 const dbFullErrorMessage = 'MDB_MAP_FULL: Environment mapsize limit reached';
 const dbIncrementBytes = 100e6;
 const {ceil} = Math;
-const envs = {};
-const notFound = 'No such file or directory';
 const openDb = (env, mapSize, path) => env.open({mapSize, path, maxDbs: 256});
 
 /** Open up the LMDB database to a specified table
@@ -37,10 +35,6 @@ const openDb = (env, mapSize, path) => env.open({mapSize, path, maxDbs: 256});
 */
 module.exports = ({fs, path, table}) => {
   const env = (() => {
-    if (!!envs[path]) {
-      return envs[path];
-    }
-
     const currentSize = () => {
       try {
         return fs.getFileStatus(join(path, dbFile)).size;
@@ -58,26 +52,9 @@ module.exports = ({fs, path, table}) => {
 
       openDb(environment, currentSize() + dbIncrementBytes, path);
 
-      envs[path] = environment;
-
       return environment;
     } catch (err) {
-      // Exit early with error when an unexpected error occurs
-      if (err.message !== notFound) {
-        throw [503, 'UnexpectedErrorOpeningLmdbDatabase', {err}];
-      }
-    }
-
-    try {
-      const environment = new Env();
-
-      openDb(environment, currentSize() + dbIncrementBytes, path);
-
-      envs[path] = environment;
-
-      return environment;
-    } catch (err) {
-      throw [503, 'UnexpectedErrorInitiatingLmdbDatabase', {err}];
+      throw [503, 'UnexpectedErrorOpeningLmdbDatabase', {err}];
     }
   })();
 
@@ -108,6 +85,8 @@ module.exports = ({fs, path, table}) => {
         } catch (err) {
           throw [503, 'UnexpectedErrorClosingLmdbDatabaseTable', {err}];
         }
+
+        env.close();
 
         return;
       },

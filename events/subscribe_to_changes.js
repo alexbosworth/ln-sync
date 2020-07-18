@@ -46,13 +46,11 @@ module.exports = ({db, lnd}) => {
 
   asyncDoUntil(
     cbk => {
-      const blocks = subscribeToBlocks({lnd});
       const channels = subscribeToChannels({lnd});
       const {forwards} = subscribeToForwards({lnd});
       const graph = subscribeToGraph({lnd});
-      const peers = subscribeToPeers({lnd});
 
-      const subs = [blocks, channels, forwards, graph, peers];
+      const subs = [channels, forwards, graph];
 
       subs.forEach(sub => {
         sub.on('error', () => {
@@ -65,14 +63,12 @@ module.exports = ({db, lnd}) => {
       });
 
       syncFromDataEvents({
-        blocks,
         channels,
         db,
         emitter,
         forwards,
         graph,
         lnd,
-        peers,
       },
       err => {
         if (!!err) {

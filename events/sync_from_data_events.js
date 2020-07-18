@@ -21,14 +21,12 @@ const peerConnectionEvents = ['connected', 'disconnected'];
 /** Keep the local db using data event streams
 
   {
-    blocks: <Blocks Subscription EventEmitter Object>
     channels: <Local Channels Subscription EventEmitter Object>
     db: <Database Object>
     emitter: <Changes EventEmitter Object>
     forwards: <HTLCs Subscription EventEmitter Object>
     graph: <Network Graph Subscription EventEmitter Object>
     lnd: <Authenticated LND API Object>
-    peers: <Peer Connectivity Subscription EventEmitter Object>
   }
 
   @returns via cbk or Promise
@@ -38,10 +36,6 @@ module.exports = (args, cbk) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
-        if (!args.blocks) {
-          return cbk([400, 'ExpectedBlocksEventsObjectToSyncFromDataEvents']);
-        }
-
         if (!args.channels) {
           return cbk([400, 'ExpectedChannelsToSyncFromDataEvents']);
         }
@@ -64,10 +58,6 @@ module.exports = (args, cbk) => {
 
         if (!args.lnd) {
           return cbk([400, 'ExpectedLndConnectionToSyncFromDataEvents']);
-        }
-
-        if (!args.peers) {
-          return cbk([400, 'ExpectedPeersToSyncFromDataEvents']);
         }
 
         return cbk();
@@ -110,22 +100,6 @@ module.exports = (args, cbk) => {
               emitter: args.emitter,
               height: change.close_height,
               id: change.id,
-            });
-          } catch (err) {
-            return emitError({err, emitter: args.emitter});
-          }
-        });
-      }],
-
-      // Sync blocks
-      syncBlocks: ['validate', ({}, cbk) => {
-        args.blocks.on('block', async ({height, id}) => {
-          try {
-            return await eventBlockMined({
-              height,
-              id,
-              db: args.db,
-              emitter: args.emitter,
             });
           } catch (err) {
             return emitError({err, emitter: args.emitter});
@@ -226,27 +200,6 @@ module.exports = (args, cbk) => {
           } catch (err) {
             return emitError({err, emitter: args.emitter});
           }
-        });
-      }],
-
-      // Sync peer states on connection and disconnection
-      syncPeers: ['getPublicKey', ({getPublicKey}, cbk) => {
-        peerConnectionEvents.forEach(event => {
-          args.peers.on(event, async peer => {
-            await delay(flutterDelayMs);
-
-            try {
-              return await eventPeerConnection({
-                db: args.db,
-                emitter: args.emitter,
-                id: peer.public_key,
-                lnd: args.lnd,
-                node: getPublicKey.public_key,
-              });
-            } catch (err) {
-              return emitError({err, emitter: args.emitter});
-            }
-          });
         });
       }],
 
