@@ -1,12 +1,8 @@
 const EventEmitter = require('events');
 
 const asyncDoUntil = require('async/doUntil');
-const {getNetworkGraph} = require('ln-service');
-const {getWalletInfo} = require('ln-service');
-const {subscribeToChannels} = require('ln-service');
-const {subscribeToBlocks} = require('ln-service');
-const {subscribeToGraph} = require('ln-service');
-const {subscribeToPeers} = require('ln-service');
+const {subscribeToChannels} = require('lightning/lnd_methods');
+const {subscribeToGraph} = require('lightning/lnd_methods');
 
 const emitError = require('./emit_error');
 const subscribeToForwards = require('./subscribe_to_forwards');

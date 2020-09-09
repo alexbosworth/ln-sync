@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
 const asyncEachSeries = require('async/eachSeries');
 const asyncRetry = require('async/retry');
-const {getNetworkGraph} = require('ln-service');
-const {getPeers} = require('ln-service');
+const {getNetworkGraph} = require('lightning/lnd_methods');
+const {getPeers} = require('lightning/lnd_methods');
 const {returnResult} = require('asyncjs-util');
 
 const {shuffle} = require('./../arrays');

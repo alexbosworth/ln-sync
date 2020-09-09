@@ -23,6 +23,7 @@ const describePolicyCltvUpdated = require('./describe_policy_cltv_updated');
 const describePolicyDisabled = require('./describe_policy_disabled');
 const describePolicyEnabled = require('./describe_policy_enabled');
 const describeProbeReceived = require('./describe_probe_received');
+const formatTokens = require('./format_tokens');
 
 module.exports = {
   describeAttemptPaymentFail,
@@ -50,4 +51,5 @@ module.exports = {
   describePolicyDisabled,
   describePolicyEnabled,
   describeProbeReceived,
+  formatTokens,
 };

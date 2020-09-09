@@ -1,6 +1,6 @@
 const EventEmitter = require('events');
 
-const {subscribeToForwards} = require('ln-service');
+const {subscribeToForwards} = require('lightning/lnd_methods');
 
 /** Subscribe to HTLC forwarding events
 

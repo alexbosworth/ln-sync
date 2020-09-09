@@ -1,6 +1,6 @@
 const asyncAuto = require('async/auto');
-const {getChannels} = require('ln-service');
-const {getWalletInfo} = require('ln-service');
+const {getChannels} = require('lightning/lnd_methods');
+const {getWalletInfo} = require('lightning/lnd_methods');
 const {returnResult} = require('asyncjs-util');
 
 const keyForRecord = require('./key_for_record');

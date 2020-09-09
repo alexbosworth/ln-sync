@@ -1,5 +1,5 @@
 const asyncAuto = require('async/auto');
-const {getNode} = require('ln-service');
+const {getNode} = require('lightning/lnd_methods');
 const {returnResult} = require('asyncjs-util');
 
 const keyForRecord = require('./key_for_record');

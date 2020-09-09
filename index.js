@@ -23,8 +23,11 @@ const {describePolicyCltvUpdated} = require('./descriptions');
 const {describePolicyDisabled} = require('./descriptions');
 const {describePolicyEnabled} = require('./descriptions');
 const {describeProbeReceived} = require('./descriptions');
+const {findKey} = require('./peers');
+const {formatTokens} = require('./descriptions');
 const {getGraphNode} = require('./graph');
 const {getGraphPair} = require('./graph');
+const {getNodeAlias} = require('./graph');
 const {getNodePeers} = require('./nodes');
 const {lmdbDatabase} = require('./database');
 const {logLineForChangeEvent} = require('./monitor');
@@ -57,8 +60,11 @@ module.exports = {
   describePolicyDisabled,
   describePolicyEnabled,
   describeProbeReceived,
+  findKey,
+  formatTokens,
   getGraphNode,
   getGraphPair,
+  getNodeAlias,
   getNodePeers,
   lmdbDatabase,
   logLineForChangeEvent,

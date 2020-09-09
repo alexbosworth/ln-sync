@@ -13,19 +13,19 @@ const {keys} = Object;
 /** Update item in LMDB
 
   {
-    db: {
-      close: <Close Database Function>
-      env: {
-        beginTxn: <Begin Transaction Function>
-      }
-      table: <Database Table Object>
-    }
     changes: {
       <Attribute String>: {
         [add]: <Add Object>
         [remove]: <Remove Value Bool>
         [set]: <Set Value Object>
       }
+    }
+    db: {
+      close: <Close Database Function>
+      env: {
+        beginTxn: <Begin Transaction Function>
+      }
+      table: <Database Table Object>
     }
     [expect]: {
       <Attribute String>: <Expected Value Object>
