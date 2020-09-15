@@ -9,7 +9,7 @@
     "asyncjs-util": "1.2.3",
     "cbor": "5.1.0",
     "colorette": "1.2.1",
-    "lightning": "2.0.42",
+    "lightning": "2.0.44",
     "node-lmdb": "0.9.2"
   },
   "devDependencies": {
@@ -32,7 +32,7 @@
     "url": "https://github.com/alexbosworth/ln-sync.git"
   },
   "scripts": {
-    "test": "tap test/database_integration/*.js"
+    "test": "tap test/database_integration/*.js test/peers/*.js"
   },
   "version": "0.1.0"
 }

@@ -29,6 +29,7 @@ const {getGraphNode} = require('./graph');
 const {getGraphPair} = require('./graph');
 const {getNodeAlias} = require('./graph');
 const {getNodePeers} = require('./nodes');
+const {getPeerLiquidity} = require('./peers');
 const {lmdbDatabase} = require('./database');
 const {logLineForChangeEvent} = require('./monitor');
 const {subscribeToChanges} = require('./events');
@@ -66,6 +67,7 @@ module.exports = {
   getGraphPair,
   getNodeAlias,
   getNodePeers,
+  getPeerLiquidity,
   lmdbDatabase,
   logLineForChangeEvent,
   subscribeToChanges,
