@@ -1,5 +1,12 @@
 # Versions
 
+## 0.3.0
+
+- `getLiquidity`: Add method to get total liquidity
+- `getNetwork`: Add method to get the network name for a node
+- `getScoredNodes`: Add method to get the list of scored nodes
+- `getTransactionRecord`: Add method to get info associated with a chain tx id
+
 ## 0.2.0
 
 - `getPeerLiquidity`: Add method to fetch liquidity with peer

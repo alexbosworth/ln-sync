@@ -27,9 +27,13 @@ const {findKey} = require('./peers');
 const {formatTokens} = require('./descriptions');
 const {getGraphNode} = require('./graph');
 const {getGraphPair} = require('./graph');
+const {getLiquidity} = require('./peers');
+const {getNetwork} = require('./chain');
 const {getNodeAlias} = require('./graph');
 const {getNodePeers} = require('./nodes');
 const {getPeerLiquidity} = require('./peers');
+const {getScoredNodes} = require('./graph');
+const {getTransactionRecord} = require('./chain');
 const {lmdbDatabase} = require('./database');
 const {logLineForChangeEvent} = require('./monitor');
 const {subscribeToChanges} = require('./events');
@@ -65,9 +69,13 @@ module.exports = {
   formatTokens,
   getGraphNode,
   getGraphPair,
+  getLiquidity,
+  getNetwork,
   getNodeAlias,
   getNodePeers,
   getPeerLiquidity,
+  getScoredNodes,
+  getTransactionRecord,
   lmdbDatabase,
   logLineForChangeEvent,
   subscribeToChanges,
