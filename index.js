@@ -34,7 +34,6 @@ const {getNodePeers} = require('./nodes');
 const {getPeerLiquidity} = require('./peers');
 const {getScoredNodes} = require('./graph');
 const {getTransactionRecord} = require('./chain');
-const {lmdbDatabase} = require('./database');
 const {logLineForChangeEvent} = require('./monitor');
 const {subscribeToChanges} = require('./events');
 const {syncCurrentRecords} = require('./sync');
@@ -76,7 +75,6 @@ module.exports = {
   getPeerLiquidity,
   getScoredNodes,
   getTransactionRecord,
-  lmdbDatabase,
   logLineForChangeEvent,
   subscribeToChanges,
   syncCurrentRecords,

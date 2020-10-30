@@ -1,6 +1,6 @@
 # Versions
 
-## 0.3.0
+## 0.3.1
 
 - `getLiquidity`: Add method to get total liquidity
 - `getNetwork`: Add method to get the network name for a node
