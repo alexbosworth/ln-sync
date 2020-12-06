@@ -31,6 +31,7 @@ const {getLiquidity} = require('./peers');
 const {getNetwork} = require('./chain');
 const {getNodeAlias} = require('./graph');
 const {getNodePeers} = require('./nodes');
+const {getPayments} = require('./transactions');
 const {getPeerLiquidity} = require('./peers');
 const {getScoredNodes} = require('./graph');
 const {getTransactionRecord} = require('./chain');
@@ -72,6 +73,7 @@ module.exports = {
   getNetwork,
   getNodeAlias,
   getNodePeers,
+  getPayments,
   getPeerLiquidity,
   getScoredNodes,
   getTransactionRecord,

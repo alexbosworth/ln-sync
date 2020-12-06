@@ -1,5 +1,9 @@
 # Versions
 
+## 0.4.0
+
+- `getPayments`: Add date constrained payments fetching
+
 ## 0.3.1
 
 - `getLiquidity`: Add method to get total liquidity
