@@ -16,8 +16,86 @@ const uniq = arr => Array.from(new Set(arr));
 /** Get LND internal record associated with a transaction id
 
   {
+    [chain_transactions]: [{
+      [block_id]: <Block Hash String>
+      [confirmation_count]: <Confirmation Count Number>
+      [confirmation_height]: <Confirmation Block Height Number>
+      created_at: <Created ISO 8601 Date String>
+      [description]: <Transaction Label String>
+      [fee]: <Fees Paid Tokens Number>
+      id: <Transaction Id String>
+      is_confirmed: <Is Confirmed Bool>
+      is_outgoing: <Transaction Outbound Bool>
+      output_addresses: [<Address String>]
+      tokens: <Tokens Including Fee Number>
+      [transaction]: <Raw Transaction Hex String>
+    }]
+    [channels]: [{
+      capacity: <Capacity Tokens Numberr>
+      id: <Standard Format Short Channel Id Hex String>
+      partner_public_key: <Peer Public Key Hex String>
+      transaction_id: <Channel Transaction Id Hex String>
+    }]
+    [closed_channels]: [{
+      capacity: <Closed Channel Capacity Tokens Number>
+      [close_balance_spent_by]: <Channel Balance Output Spent By Tx Id String>
+      [close_balance_vout]: <Channel Balance Close Tx Output Index Number>
+      [close_confirm_height]: <Channel Close Confirmation Height Number>
+      close_payments: [{
+        is_outgoing: <Payment Is Outgoing Bool>
+        is_paid: <Payment Is Claimed With Preimage Bool>
+        is_pending: <Payment Resolution Is Pending Bool>
+        is_refunded: <Payment Timed Out And Went Back To Payer Bool>
+        [spent_by]: <Close Transaction Spent By Transaction Id Hex String>
+        tokens: <Associated Tokens Number>
+        transaction_id: <Transaction Id Hex String>
+        transaction_vout: <Transaction Output Index Number>
+      }]
+      [close_transaction_id]: <Closing Transaction Id Hex String>
+      final_local_balance: <Channel Close Final Local Balance Tokens Number>
+      final_time_locked_balance: <Closed Channel Timelocked Tokens Number>
+      [id]: <Closed Standard Format Channel Id String>
+      is_breach_close: <Is Breach Close Bool>
+      is_cooperative_close: <Is Cooperative Close Bool>
+      is_funding_cancel: <Is Funding Cancelled Close Bool>
+      is_local_force_close: <Is Local Force Close Bool>
+      [is_partner_closed]: <Channel Was Closed By Channel Peer Bool>
+      [is_partner_initiated]: <Channel Was Initiated By Channel Peer Bool>
+      is_remote_force_close: <Is Remote Force Close Bool>
+      partner_public_key: <Partner Public Key Hex String>
+      transaction_id: <Channel Funding Transaction Id Hex String>
+      transaction_vout: <Channel Funding Output Index Number>
+    }]
     id: <Transaction Id Hex String>
     lnd: <Authenticated LND API Object>
+    [pending_channels]: [{
+      [close_transaction_id]: <Channel Closing Transaction Id String>
+      is_active: <Channel Is Active Bool>
+      is_closing: <Channel Is Closing Bool>
+      is_opening: <Channel Is Opening Bool>
+      is_partner_initiated: <Channel Partner Initiated Channel Bool>
+      local_balance: <Channel Local Tokens Balance Number>
+      local_reserve: <Channel Local Reserved Tokens Number>
+      partner_public_key: <Channel Peer Public Key String>
+      [pending_balance]: <Tokens Pending Recovery Number>
+      [pending_payments]: [{
+        is_incoming: <Payment Is Incoming Bool>
+        timelock_height: <Payment Timelocked Until Height Number>
+        tokens: <Payment Tokens Number>
+        transaction_id: <Payment Transaction Id String>
+        transaction_vout: <Payment Transaction Vout Number>
+      }]
+      received: <Tokens Received Number>
+      [recovered_tokens]: <Tokens Recovered From Close Number>
+      remote_balance: <Remote Tokens Balance Number>
+      remote_reserve: <Channel Remote Reserved Tokens Number>
+      sent: <Send Tokens Number>
+      [timelock_expiration]: <Pending Tokens Block Height Timelock Number>
+      [transaction_fee]: <Funding Transaction Fee Tokens Number>
+      transaction_id: <Channel Funding Transaction Id String>
+      transaction_vout: <Channel Funding Transaction Vout Number>
+      [transaction_weight]: <Funding Transaction Weight Number>
+    }]
   }
 
   @returns via cbk or Promise
@@ -39,16 +117,16 @@ const uniq = arr => Array.from(new Set(arr));
     [tx]: <Transaction Id Hex String>
   }
 */
-module.exports = ({id, lnd}, cbk) => {
+module.exports = (args, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: async () => {
-        if (!id) {
+        if (!args.id) {
           throw [400, 'ExpectedTransactionIdToFindRecordData'];
         }
 
-        if (!lnd) {
+        if (!args.lnd) {
           throw [400, 'ExpectedLndToFindChainTransactionRecordData'];
         }
 
@@ -56,16 +134,42 @@ module.exports = ({id, lnd}, cbk) => {
       },
 
       // Get channels
-      getChannels: ['validate', ({}, cbk) => getChannels({lnd}, cbk)],
+      getChannels: ['validate', ({}, cbk) => {
+        // Exit early when channels were provided
+        if (!!args.channels) {
+          return cbk(null, {channels: args.channels});
+        }
+
+        return getChannels({lnd: args.lnd}, cbk);
+      }],
 
       // Get closed channels
-      getClosed: ['validate', ({}, cbk) => getClosedChannels({lnd}, cbk)],
+      getClosed: ['validate', ({}, cbk) => {
+        // Exit early when closed channels were provided
+        if (!!args.closed_channels) {
+          return cbk(null, {channels: args.closed_channels});
+        }
+
+        return getClosedChannels({lnd: args.lnd}, cbk);
+      }],
 
       // Get pending transactions
-      getPending: ['validate', ({}, cbk) => getPendingChannels({lnd}, cbk)],
+      getPending: ['validate', ({}, cbk) => {
+        if (!!args.pending_channels) {
+          return cbk(null, {pending_channels: args.pending_channels});
+        }
+
+        return getPendingChannels({lnd: args.lnd}, cbk);
+      }],
 
       // Get transactions
-      getTx: ['validate', ({}, cbk) => getChainTransactions({lnd}, cbk)],
+      getTx: ['validate', ({}, cbk) => {
+        if (!!args.chain_transactions) {
+          return cbk(null, {transactions: args.chain_transactions});
+        }
+
+        return getChainTransactions({lnd: args.lnd}, cbk);
+      }],
 
       // Determine relationship of transaction id to records
       record: [
@@ -73,29 +177,53 @@ module.exports = ({id, lnd}, cbk) => {
         'getClosed',
         'getPending',
         'getTx',
-        async ({getChannels, getClosed, getPending, getTx}, cbk) =>
+        async ({getChannels, getClosed, getPending, getTx}) =>
       {
         const records = [];
         const relatedChannels = [];
 
         const chans = getChannels.channels.filter(channel => {
-          return channel.transaction_id === id;
+          return channel.transaction_id === args.id;
         });
 
         const chanClosing = getClosed.channels.find(channel => {
-          return channel.close_transaction_id === id;
+          return channel.close_transaction_id === args.id;
         });
 
         const closingChans = getClosed.channels.filter(channel => {
-          return channel.transaction_id === id;
+          return channel.transaction_id === args.id;
         });
 
         const openingChans = getPending.pending_channels.filter(channel => {
-          return channel.is_opening && channel.transaction_id === id;
+          return channel.is_opening && channel.transaction_id === args.id;
         });
 
         const tx = getTx.transactions.find(transaction => {
-          return transaction.id === id;
+          return transaction.id === args.id;
+        });
+
+        getClosed.channels.forEach(channel => {
+          return channel.close_payments
+            .filter(n => n.spent_by === args.id)
+            .forEach(payment => {
+              const direction = payment.is_outgoing ? 'outgoing' : 'incoming';
+
+              if (!!payment.is_pending) {
+                return records.push({
+                  action: 'payment_pending',
+                  channel: channel.id,
+                  with: channel.partner_public_key,
+                });
+              }
+
+              const resolution = payment.is_paid ? 'paid' : 'refunded';
+
+              return records.push({
+                action: `${direction}_payment_${resolution}`,
+                channel: channel.id,
+                with: channel.partner_public_key,
+              });
+            });
         });
 
         openingChans.forEach(channel => {
@@ -191,7 +319,7 @@ module.exports = ({id, lnd}, cbk) => {
             const txRecords = transactionRecords({
               ended: getClosed.channels,
               id: hash.reverse().toString('hex'),
-              original: id,
+              original: args.id,
               pending: getPending.pending_channels,
               txs: getTx.transactions,
               vout: index,
@@ -245,8 +373,8 @@ module.exports = ({id, lnd}, cbk) => {
 
         return asyncMap(keys, (key, cbk) => {
           return getNode({
-            lnd,
             is_omitting_channels: true,
+            lnd: args.lnd,
             public_key: key,
           },
           (err, res) => {

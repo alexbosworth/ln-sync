@@ -1,5 +1,9 @@
 # Versions
 
+## 0.4.1
+
+- `getTransactionRecord`: Include in-flight payments, optimize for multiple records
+
 ## 0.4.0
 
 - `getPayments`: Add date constrained payments fetching
