@@ -9,7 +9,7 @@ const peerLiquidity = require('./peer_liquidity');
 /** Get the rundown on liquidity with a specific peer
 
   {
-    lnd: <Authenticated LND gRPC API Object>
+    lnd: <Authenticated LND API Object>
     public_key: <Peer Public Key Hex String>
     [settled]: <Known Settled Payment Id String>
   }

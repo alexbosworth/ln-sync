@@ -3,14 +3,14 @@
   "bugs": {
     "url": "https://github.com/alexbosworth/ln-sync/issues"
   },
-  "description": "LN metadata persistance methods",
+  "description": "LN metadata persistence methods",
   "dependencies": {
     "async": "3.2.0",
     "asyncjs-util": "1.2.3",
     "bitcoinjs-lib": "5.2.0",
-    "cbor": "5.1.0",
+    "cbor": "7.0.1",
     "colorette": "1.2.1",
-    "lightning": "3.0.16",
+    "lightning": "3.2.14",
     "stats-lite": "2.2.0"
   },
   "devDependencies": {
@@ -36,5 +36,5 @@
   "scripts": {
     "test": "tap test/chain/*.js test/database_integration/*.js test/graph/*.js test/peers/*.js"
   },
-  "version": "0.4.2"
+  "version": "0.4.3"
 }

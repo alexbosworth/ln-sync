@@ -23,6 +23,8 @@ const updateLmdbItem = require('./update_lmdb_item');
     db: {
       getItem: <Get Item Function> ({key, table}, cbk) => {}
       putItem: <Put Item Function> ({key, record, table}, cbk) => {}
+      query: <Query Function> ({table, where}, cbk) => {}
+      removeItem: <Remove Item Function> ({key, table}, cbk) => {}
       updateItem: <Update Item Function> ({key, changes, expect, table}, cbk)
     }
   }
