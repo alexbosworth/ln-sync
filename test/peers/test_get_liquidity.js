@@ -60,13 +60,13 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({deepIs, end, rejects}) => {
+  return test(description, async ({end, rejects, strictSame}) => {
     if (!!error) {
       await rejects(getLiquidity(args), error, 'Got expected error');
     } else {
       const res = await getLiquidity(args);
 
-      deepIs(res, expected, 'Balance is calculated');
+      strictSame(res, expected, 'Balance is calculated');
     }
 
     return end();

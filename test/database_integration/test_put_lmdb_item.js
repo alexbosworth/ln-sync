@@ -20,7 +20,7 @@ const removeDir = dir => new Promise(resolve => rimraf(dir, () => resolve()));
 const table = 'table';
 
 // When putting an item into the database, it should store without error
-return test('LMDB Database Put Item', async ({deepIs, end, rejects}) => {
+return test('LMDB Database Put Item', async ({end, rejects, strictSame}) => {
   const path = join(tmpdir(), randomDir());
 
   mkdirSync(path);
@@ -36,13 +36,13 @@ return test('LMDB Database Put Item', async ({deepIs, end, rejects}) => {
     db: (await openLmdbDatabase({fs, path})).db,
   });
 
-  deepIs(got.record, record, 'Successfully put record');
+  strictSame(got.record, record, 'Successfully put record');
 
   const {records} = await queryLmdb({
     db: (await openLmdbDatabase({fs, path})).db,
   });
 
-  deepIs(records, [{record, key: key.toString('hex')}]);
+  strictSame(records, [{record, key: key.toString('hex')}]);
 
   await removeDir(path);
 

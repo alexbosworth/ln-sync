@@ -20,7 +20,7 @@ const removeDir = dir => new Promise(resolve => rimraf(dir, () => resolve()));
 const table = 'table';
 
 // When updating an item in the database, it should update without error
-return test('LMDB Database Update Item', async ({deepIs, end, rejects}) => {
+return test('LMDB Database Update Item', async ({end, strictSame}) => {
   const path = join(tmpdir(), randomDir());
 
   mkdirSync(path);
@@ -39,7 +39,7 @@ return test('LMDB Database Update Item', async ({deepIs, end, rejects}) => {
 
   const got = await getLmdbItem({key, db: openLmdbDatabase({fs, path}).db});
 
-  deepIs(got.record, {record: 'changed'}, 'Successfully put record');
+  strictSame(got.record, {record: 'changed'}, 'Successfully put record');
 
   await removeDir(path);
 

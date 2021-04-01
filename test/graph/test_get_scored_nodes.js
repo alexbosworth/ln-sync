@@ -57,13 +57,13 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({deepIs, end, equal, rejects}) => {
+  return test(description, async ({end, rejects, strictSame}) => {
     if (!!error) {
-      rejects(getScoredNodes(args), error, 'Got expected error');
+      await rejects(getScoredNodes(args), error, 'Got expected error');
     } else {
       const {nodes} = await getScoredNodes(args);
 
-      deepIs(nodes, expected.nodes, 'Got expected nodes');
+      strictSame(nodes, expected.nodes, 'Got expected nodes');
     }
 
     return end();

@@ -52,13 +52,13 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, ({deepIs, end, equal, throws}) => {
+  return test(description, ({end, strictSame, throws}) => {
     if (!!error) {
       throws(() => peerLiquidity(args), new Error(error));
     } else {
       const liquidity = peerLiquidity(args);
 
-      deepIs(liquidity, expected.liquidity, 'Got expected liquidity');
+      strictSame(liquidity, expected.liquidity, 'Got expected liquidity');
     }
 
     return end();
