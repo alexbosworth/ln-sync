@@ -1,6 +1,6 @@
 # Versions
 
-## 0.4.5
+## 0.4.6
 
 - `getTransactionRecord`: Include in-flight payments, optimize for multiple records
 
