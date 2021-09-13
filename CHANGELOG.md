@@ -1,5 +1,11 @@
 # Versions
 
+## 1.0.0
+
+### Breaking Changes
+
+- Require node.js v12+
+
 ## 0.4.6
 
 - `getTransactionRecord`: Include in-flight payments, optimize for multiple records
