@@ -6,7 +6,7 @@ const emptyTokens = ' ';
 const level0 = 1e3;
 const level1 = 1e6;
 const level2 = 4294967;
-const tokensAsBigTokens = tokens => !!tokens ? (tokens / 1e8).toFixed(8) : ' ';
+const tokensAsBigTokens = tokens => (tokens / 1e8).toFixed(8);
 
 /** Format tokens for display
 

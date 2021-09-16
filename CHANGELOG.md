@@ -1,5 +1,11 @@
 # Versions
 
+## 2.0.0
+
+### Breaking Changes
+
+- Remove monitoring helper methods
+
 ## 1.0.0
 
 ### Breaking Changes

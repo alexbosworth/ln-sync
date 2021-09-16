@@ -1,15 +1,21 @@
 const asyncAuto = require('async/auto');
-const asyncUntil = require('async/until');
-const {getPayments} = require('lightning');
+const asyncMap = require('async/map');
+const asyncMapLimit = require('async/mapLimit');
+const {getPayment} = require('lightning');
 const {returnResult} = require('asyncjs-util');
 
-const defaultLimit = 250;
+const getAllInvoices = require('./get_all_invoices');
 
-/** Get payments
+const flatten = arr => [].concat(...arr);
+const {isArray} = Array;
+const maxGetPayments = 100;
+const notFound = 404;
+
+/** Get payments that were rebalances
 
   {
-    [after]: <Get Only Payments Create At Or After ISO 8601 Date String>
-    lnd: <Authenticated LND API Object>
+    after: <Rebalance Payments After ISO 8601 Date String>
+    lnds: [<Authenticated LND API Object>]
   }
 
   @returns via cbk or Promise
@@ -44,6 +50,7 @@ const defaultLimit = 250;
           message: <Error Message String>
         }
         [index]: <Payment Add Index Number>
+        [confirmed_at]: <Payment Confirmed At ISO 8601 Date String>
         is_confirmed: <Payment Attempt Succeeded Bool>
         is_failed: <Payment Attempt Failed Bool>
         is_pending: <Payment Attempt is Waiting For Resolution Bool>
@@ -67,6 +74,7 @@ const defaultLimit = 250;
           [total_mtokens]: <Total Millitokens String>
         }
       }]
+      confirmed_at: <Payment Confirmed At ISO 8601 Date String>
       created_at: <Payment at ISO-8601 Date String>
       destination: <Destination Node Public Key Hex String>
       fee: <Paid Routing Fee Rounded Down Tokens Number>
@@ -85,60 +93,70 @@ const defaultLimit = 250;
     }]
   }
 */
-module.exports = ({after, lnd}, cbk) => {
+module.exports = ({after, lnds}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
       validate: cbk => {
-        if (!lnd) {
-          return cbk([400, 'ExpectedAuthenticatedLndToGetPayments']);
+        if (!after) {
+          return cbk([400, 'ExpectedAfterDateToGetRebalancePayments']);
+        }
+
+        if (!isArray(lnds)) {
+          return cbk([400, 'ExpectedArrayOfLndsToGetRebalancePayments']);
         }
 
         return cbk();
       },
 
-      // Get payments
-      getPayments: ['validate', ({}, cbk) => {
-        const payments = [];
-        let token;
+      // Get all the settled invoices
+      getSettled: ['validate', ({}, cbk) => {
+        return asyncMap(lnds, (lnd, cbk) => {
+          return getAllInvoices({lnd, created_after: after}, cbk);
+        },
+        (err, res) => {
+          if (!!err) {
+            return cbk(err);
+          }
 
-        return asyncUntil(
-          cbk => cbk(null, token === false),
-          cbk => {
-            return getPayments({
-              lnd,
-              token,
-              limit: !token ? defaultLimit : undefined,
-            },
-            (err, res) => {
+          return cbk(null, flatten(res.map(({invoices}) => invoices)));
+        });
+      }],
+
+      // Find self-payments by looking for payments with invoice ids
+      getRebalances: ['getSettled', ({getSettled}, cbk) => {
+        return asyncMap(lnds, (lnd, cbk) => {
+          return asyncMapLimit(getSettled, maxGetPayments, ({id}, cbk) => {
+            return getPayment({id, lnd}, (err, res) => {
+              // Exit early when there is no matching payment
+              if (isArray(err) && err.shift() === notFound) {
+                return cbk();
+              }
+
               if (!!err) {
                 return cbk(err);
               }
 
-              token = res.next || false;
-
-              // When there is a too-old payment returned, stop paging
-              if (!!after && !!res.payments.find(n => n.created_at < after)) {
-                token = false;
-              }
-
-              res.payments
-                .filter(n => !after || n.created_at >= after)
-                .forEach(n => payments.push(n));
-
-              return cbk();
+              return cbk(null, res.payment);
             });
           },
-          err => {
+          (err, payments) => {
             if (!!err) {
               return cbk(err);
             }
 
-            return cbk(null, {payments});
+            return cbk(null, payments.filter(n => !!n));
+          });
+        },
+        (err, res) => {
+          if (!!err) {
+            return cbk(err);
           }
-        );
+
+          return cbk(null, {payments: flatten(res)});
+        });
       }],
     },
-    returnResult({reject, resolve, of: 'getPayments'}, cbk));
+    returnResult({reject, resolve, of: 'getRebalances'}, cbk));
   });
 };
