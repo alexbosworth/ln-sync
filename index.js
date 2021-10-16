@@ -2,6 +2,7 @@ const {findKey} = require('./peers');
 const {formatTokens} = require('./display');
 const {getAllInvoices} = require('./transactions');
 const {getLiquidity} = require('./peers');
+const {getMaxFundAmount} = require('./chain');
 const {getNetwork} = require('./chain');
 const {getNodeAlias} = require('./graph');
 const {getPayments} = require('./transactions');
@@ -15,6 +16,7 @@ module.exports = {
   formatTokens,
   getAllInvoices,
   getLiquidity,
+  getMaxFundAmount,
   getNetwork,
   getNodeAlias,
   getPayments,

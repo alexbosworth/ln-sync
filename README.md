@@ -142,6 +142,27 @@ Get the alias of a node, ignoring errors
       id: <Node Identity Public Key Hex String>
     }
 
+### `getMaxFundAmount`
+
+Find the max amount that can be used for funding outputs given inputs
+
+    {
+      addresses: [<Send to Address String>]
+      fee_tokens_per_vbyte: <Funding Fee Tokens Per VByte Number>
+      inputs: [{
+        tokens: <Input Tokens Number>
+        transaction_id: <UTXO Transaction Id Hex String>
+        transaction_vout: <UTXO Transaction Output Index Number>
+      }]
+      lnd: <Authenticated LND API Object>
+    }
+
+    @returns via cbk or Promise
+    {
+      fee_tokens_per_vbyte: <Effective Final Fee Tokens Per VByte Number>
+      max_tokens: <Maximum Spendable Tokens Number>
+    }
+
 ### `getPayments`
 
 Get payments

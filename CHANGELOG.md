@@ -1,5 +1,9 @@
 # Versions
 
+## 2.1.0
+
+- Add `getMaxFundAmount` to help calculate a maximum amount that can be funded
+
 ## 2.0.3
 
 ### Breaking Changes
