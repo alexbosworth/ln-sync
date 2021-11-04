@@ -1,5 +1,6 @@
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
+const asyncRetry = require('async/retry');
 const {getChannels} = require('lightning/lnd_methods');
 const {getNode} = require('lightning/lnd_methods');
 const {returnResult} = require('asyncjs-util');
@@ -78,29 +79,36 @@ module.exports = ({channels, lnd, query}, cbk) => {
         const q = query.toLowerCase();
 
         return asyncMap(keys, (key, cbk) => {
-          return getNode({
-            lnd,
-            is_omitting_channels: true,
-            public_key: key,
+          return asyncRetry({}, cbk => {
+            return getNode({
+              lnd,
+              is_omitting_channels: true,
+              public_key: key,
+            },
+            (err, node) => {
+              // Supress errors on not found node
+              if (isArray(err) && err.slice().shift() === 404) {
+                return cbk();
+              }
+
+              if (!!err) {
+                return cbk(err);
+              }
+
+              const alias = node.alias || String();
+
+              const isAliasMatch = alias.toLowerCase().includes(q);
+              const isPublicKeyMatch = key.startsWith(q);
+
+              // Exit early when the node doesn't match the query
+              if (!isAliasMatch && !isPublicKeyMatch) {
+                return cbk();
+              }
+
+              return cbk(null, {alias, public_key: key});
+            });
           },
-          (err, node) => {
-            // Suppress errors on matching lookup
-            if (!!err) {
-              return cbk();
-            }
-
-            const alias = node.alias || String();
-
-            const isAliasMatch = alias.toLowerCase().includes(q);
-            const isPublicKeyMatch = key.startsWith(q);
-
-            // Exit early when the node doesn't match the query
-            if (!isAliasMatch && !isPublicKeyMatch) {
-              return cbk();
-            }
-
-            return cbk(null, {alias, public_key: key});
-          });
+          cbk);
         },
         cbk);
       }],
