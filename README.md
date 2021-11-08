@@ -5,6 +5,17 @@ payments.
 
 ## Methods
 
+### `connectPeer`
+
+Connect a peer
+
+    {
+      id: <Node Public Key Hex String>
+      lnd: <Authenticated LND API Object>
+    }
+
+    @returns via cbk or Promise
+
 ### `findKey`
 
 Find a public key given a query
@@ -106,7 +117,7 @@ A request function is required when min_node_score is specified
       [min_node_score]: <Minimum Node Score Number>
       [max_fee_rate]: <Max Inbound Fee Rate Parts Per Million Number>
       [request]: <Request Function>
-      [with]: <Liquidity With Specific Node Public Key Hex String>
+      [with]: [<Liquidity With Specific Node Public Key Hex String>]
     }
 
     @returns via cbk

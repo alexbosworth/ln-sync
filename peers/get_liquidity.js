@@ -8,6 +8,8 @@ const liquidityTokens = require('./liquidity_tokens');
 const {getNetwork} = require('./../chain');
 const {getScoredNodes} = require('./../graph');
 
+const {isArray} = Array;
+
 /** Get the channel available liquidity
 
   A request function is required when min_node_score is specified
@@ -19,7 +21,7 @@ const {getScoredNodes} = require('./../graph');
     [min_node_score]: <Minimum Node Score Number>
     [max_fee_rate]: <Max Inbound Fee Rate Parts Per Million Number>
     [request]: <Request Function>
-    [with]: <Liquidity With Specific Node Public Key Hex String>
+    [with]: [<Liquidity With Specific Node Public Key Hex String>]
   }
 
   @returns via cbk
@@ -42,6 +44,10 @@ module.exports = (args, cbk) => {
 
         if (!!args.min_node_score && !args.request) {
           return cbk([400, 'ExpectedRequestFunctionToFilterByNodeScore']);
+        }
+
+        if (!!args.with && !isArray(args.with)) {
+          return cbk([400, 'ExpectedArrayOfPublicKeysToGetLiquidity']);
         }
 
         return cbk();

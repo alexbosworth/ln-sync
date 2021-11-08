@@ -25,7 +25,7 @@ const topPercentile = 0.9;
       public_key: <Public Key Hex String>
     }]]
     public_key: <Public Key Hex String>
-    with: <With Public Key Hex String>
+    with: [<With Public Key Hex String>]
   }
 
   @returns
@@ -55,7 +55,14 @@ module.exports = args => {
 
   const activeChannels = args.channels
     .filter(n => !!n.is_active)
-    .filter(n => !args.with || n.partner_public_key === args.with)
+    .filter(channel => {
+      // Exit early when there are no peers specified
+      if (!args.with) {
+        return true;
+      }
+
+      return args.with.includes(channel.partner_public_key);
+    })
     .filter(n => {
       // Exit early when considering outbound liquidity
       if (!!args.is_outbound) {

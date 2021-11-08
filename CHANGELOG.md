@@ -1,5 +1,14 @@
 # Versions
 
+## 3.0.0
+
+- `connectPeer`: Add method to add a peer, looking up its network socket when necessary
+- `getLiquidity`: Multiple `with` keys can now be referenced for liquidity calculation
+
+### Breaking Changes
+
+- `getLiquidity`: `with` to specify peers now requires an array of public keys
+
 ## 2.1.1
 
 - Add `getMaxFundAmount` to help calculate a maximum amount that can be funded

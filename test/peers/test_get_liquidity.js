@@ -34,6 +34,11 @@ const tests = [
     error: [400, 'ExpectedRequestFunctionToFilterByNodeScore'],
   },
   {
+    args: {lnd: makeLnd({}), with: 'b'},
+    description: 'With is expected to be an array',
+    error: [400, 'ExpectedArrayOfPublicKeysToGetLiquidity'],
+  },
+  {
     args: {
       lnd: makeLnd({}),
       min_node_score: 1,
@@ -48,7 +53,7 @@ const tests = [
     expected: {tokens: [1]},
   },
   {
-    args: {is_outbound: true, lnd: makeLnd({}), with: 'b'},
+    args: {is_outbound: true, lnd: makeLnd({}), with: ['b']},
     description: 'Liquidity is returned for outbound request',
     expected: {tokens: [1, 1, 1]},
   },

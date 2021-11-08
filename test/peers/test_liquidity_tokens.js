@@ -46,7 +46,7 @@ const tests = [
       ],
       policies: [[{public_key: 'a'}, {fee_rate: 1, public_key: 'b'}]],
       public_key: 'a',
-      with: 'b',
+      with: ['b'],
     },
     description: 'With a specific peer and no max fee rate',
     expected: {tokens: [5]},

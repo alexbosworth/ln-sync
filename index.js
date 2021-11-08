@@ -1,3 +1,4 @@
+const {connectPeer} = require('./peers');
 const {findKey} = require('./peers');
 const {formatTokens} = require('./display');
 const {getAllInvoices} = require('./transactions');
@@ -12,6 +13,7 @@ const {getScoredNodes} = require('./graph');
 const {getTransactionRecord} = require('./chain');
 
 module.exports = {
+  connectPeer,
   findKey,
   formatTokens,
   getAllInvoices,
