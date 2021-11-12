@@ -1,6 +1,6 @@
 # Versions
 
-## 3.0.0
+## 3.0.1
 
 - `connectPeer`: Add method to add a peer, looking up its network socket when necessary
 - `getLiquidity`: Multiple `with` keys can now be referenced for liquidity calculation
