@@ -7,7 +7,7 @@ const tests = [
   {
     args: ({lnd}) => ({lnd}),
     description: 'Get network name',
-    expected: ({}) => ({network: 'btcregtest'}),
+    expected: ({}) => ({bitcoinjs: 'regtest', network: 'btcregtest'}),
   },
 ];
 

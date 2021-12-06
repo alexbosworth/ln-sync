@@ -1,5 +1,9 @@
 # Versions
 
+## 3.1.0
+
+- `getNetwork`: Return `bitcoinjs` network name when applicable
+
 ## 3.0.1
 
 - `connectPeer`: Add method to add a peer, looking up its network socket when necessary

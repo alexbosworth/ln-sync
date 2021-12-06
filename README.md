@@ -135,6 +135,7 @@ Get network name for lnd
 
     @returns via cbk or Promise
     {
+      [bitcoinjs]: <Bitcoin JS Network Name String>
       network: <Network Name String>
     }
 

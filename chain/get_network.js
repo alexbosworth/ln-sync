@@ -4,6 +4,7 @@ const {returnResult} = require('asyncjs-util');
 
 const {chains} = require('./networks');
 
+const bjNames = {btc: 'bitcoin', btctestnet: 'testnet', btcregtest: 'regtest'};
 const {keys} = Object;
 const reversedBytes = hex => Buffer.from(hex, 'hex').reverse().toString('hex');
 
@@ -15,6 +16,7 @@ const reversedBytes = hex => Buffer.from(hex, 'hex').reverse().toString('hex');
 
   @returns via cbk or Promise
   {
+    [bitcoinjs]: <Bitcoin JS Network Name String>
     network: <Network Name String>
   }
 */
@@ -49,7 +51,7 @@ module.exports = ({lnd}, cbk) => {
           return cbk([400, 'ExpectedLndWithKnownChain']);
         }
 
-        return cbk(null, {network});
+        return cbk(null, {network, bitcoinjs: bjNames[network]});
       }],
     },
     returnResult({reject, resolve, of: 'network'}, cbk));
