@@ -5,6 +5,26 @@ payments.
 
 ## Methods
 
+### `acceptsChannelOpen`
+
+Confirm that a peer will accept a channel open
+
+    {
+      capacity: <Channel Capacity Tokens Number>
+      [cooperative_close_address]: <Restrict Coop Close To Address String>
+      [give_tokens]: <Tokens to Gift To Partner Number> // Defaults to zero
+      [is_private]: <Channel is Private Bool> // Defaults to false
+      lnd: <Authenticated LND API Object>
+      [min_htlc_mtokens]: <Minimum HTLC Millitokens String>
+      [partner_csv_delay]: <Peer Output CSV Delay Number>
+      partner_public_key: <Public Key Hex String>
+    }
+
+    @returns via cbk or Promise
+    {
+      is_accepted: <Channel Proposal Is Accepted Bool>
+    }
+
 ### `connectPeer`
 
 Connect a peer
@@ -483,3 +503,44 @@ Get LND internal record associated with a transaction id
       [tx]: <Transaction Id Hex String>
     }
 
+### `getTransitRefund`
+
+Make a refund transaction for transit funds
+
+    {
+      funded_tokens: <Tokens Sent to Transit Address Number>
+      lnd: <Authenticated LND API Object>
+      network: <Network Name String>
+      refund_address: <Refund Coins to On Chain Address String>
+      transit_address: <Transit On Chain Bech32 Address String>
+      transit_key_index: <Transit Key Index Number>
+      transit_public_key: <Transit Public Key Hex String>
+      transaction_id: <Transaction Id Hex String>
+      transaction_vout: <Transaction Output Index Number>
+    }
+
+    @returns via cbk or Promise
+    {
+      refund: <Fully Signed Refund Transaction Hex String>
+    }
+
+### `waitForPendingOpen`
+
+Wait for an incoming pending open channel matching specific criteria
+
+    {
+      [capacity]: <Channel Capacity Tokens Number>
+      interval: <Check Time Milliseconds Number>
+      lnd: <Authenticated LND API Object>
+      local_balance: <Starting Local Balance Number>
+      partner_public_key: <Peer Public Key Hex String>
+      times: <Total Check Times Number>
+      transaction_id: <Transaction Id Hex String>
+      transaction_vout: <Transaction Output Index Number>
+    }
+
+    @returns via cbk or Promise
+    {
+      transaction_id: <Transaction Id Hex String>
+      transaction_vout: <Transaction Output Index Number>
+    }

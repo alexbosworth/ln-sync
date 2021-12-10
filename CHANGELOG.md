@@ -1,5 +1,11 @@
 # Versions
 
+## 3.2.0
+
+- `acceptsChannelOpen`: Add method to confirm a peer accepts a chan open
+- `getTransitRefund`: Add method to generate a transit output refund
+- `waitForPendingOpen`: Add method to wait for a pending open channel
+
 ## 3.1.0
 
 - `getNetwork`: Return `bitcoinjs` network name when applicable

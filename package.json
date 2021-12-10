@@ -10,7 +10,7 @@
     "bitcoinjs-lib": "6.0.1",
     "cbor": "8.1.0",
     "colorette": "2.0.16",
-    "lightning": "5.1.1",
+    "lightning": "5.2.1",
     "stats-lite": "2.2.0"
   },
   "devDependencies": {
@@ -33,7 +33,8 @@
     "url": "https://github.com/alexbosworth/ln-sync.git"
   },
   "scripts": {
+    "integration-tests": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/integration/*.js",
     "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/chain/*.js test/display/*.js test/graph/*.js test/peers/*.js"
   },
-  "version": "3.1.0"
+  "version": "3.2.0"
 }

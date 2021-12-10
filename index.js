@@ -1,3 +1,4 @@
+const {acceptsChannelOpen} = require('./peers');
 const {connectPeer} = require('./peers');
 const {findKey} = require('./peers');
 const {formatTokens} = require('./display');
@@ -11,8 +12,11 @@ const {getPeerLiquidity} = require('./peers');
 const {getRebalancePayments} = require('./transactions');
 const {getScoredNodes} = require('./graph');
 const {getTransactionRecord} = require('./chain');
+const {getTransitRefund} = require('./chain');
+const {waitForPendingOpen} = require('./peers');
 
 module.exports = {
+  acceptsChannelOpen,
   connectPeer,
   findKey,
   formatTokens,
@@ -26,4 +30,6 @@ module.exports = {
   getRebalancePayments,
   getScoredNodes,
   getTransactionRecord,
+  getTransitRefund,
+  waitForPendingOpen,
 };
