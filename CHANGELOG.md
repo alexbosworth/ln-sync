@@ -1,5 +1,9 @@
 # Versions
 
+## 3.3.0
+
+- `updateChannelFee`: Add method to update a channel fee
+
 ## 3.2.0
 
 - `acceptsChannelOpen`: Add method to confirm a peer accepts a chan open

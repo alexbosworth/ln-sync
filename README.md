@@ -524,6 +524,24 @@ Make a refund transaction for transit funds
       refund: <Fully Signed Refund Transaction Hex String>
     }
 
+### `updateChannelFee`
+
+Update the fee for an individual channel
+
+    {
+      [base_fee_mtokens]: <Base Fee Millitokens String>
+      [cltv_delta]: <CLTV Delta to Use Number>
+      fee_rate: <Fee Rate Number>
+      from: <Local Node Public Key Hex String>
+      lnd: <Authenticated LND API Object>
+      [max_htlc_mtokens]: <Maximum HTLC Millitokens to Forward String>
+      [min_htlc_mtokens]: <Minimum HTLC Millitokens to Forward String>
+      transaction_id: <Funding Transaction Id Hex String>
+      transaction_vout: <Funding Transaction Output Index Number>
+    }
+
+    @returns via cbk or Promise
+
 ### `waitForPendingOpen`
 
 Wait for an incoming pending open channel matching specific criteria

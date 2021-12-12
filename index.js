@@ -13,6 +13,7 @@ const {getRebalancePayments} = require('./transactions');
 const {getScoredNodes} = require('./graph');
 const {getTransactionRecord} = require('./chain');
 const {getTransitRefund} = require('./chain');
+const {updateChannelFee} = require('./peers');
 const {waitForPendingOpen} = require('./peers');
 
 module.exports = {
@@ -31,5 +32,6 @@ module.exports = {
   getScoredNodes,
   getTransactionRecord,
   getTransitRefund,
+  updateChannelFee,
   waitForPendingOpen,
 };
