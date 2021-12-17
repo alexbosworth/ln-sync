@@ -1,5 +1,10 @@
 # Versions
 
+## 3.6.0
+
+- `reserveTransitFunds`: Add support for specifying chain fee `rate`
+- `reserveTransitFunds`: Add `address`, `key`, `output`, `script`
+
 ## 3.5.0
 
 - `askForFeeRate`: Add method to ask for a chain fee rate

@@ -1,3 +1,4 @@
+const {address} = require('bitcoinjs-lib');
 const asyncAuto = require('async/auto');
 const {createChainAddress} = require('ln-service');
 const {getPublicKey} = require('ln-service');
@@ -10,11 +11,16 @@ const getFundedTransaction = require('./get_funded_transaction');
 const {getNetwork} = require('./../chain');
 const getTransitRefund = require('./get_transit_refund');
 
+const bufferAsHex = buffer => buffer.toString('hex');
 const familyTemporary = 805;
+const {fromBech32} = address;
 const {fromHex} = Transaction;
 const hexAsBuffer = hex => Buffer.from(hex, 'hex');
 const minimum = 294;
+const notFoundIndex = -1;
+const {p2pkh} = payments;
 const {p2wpkh} = payments;
+const {toOutputScript} = address;
 
 /** Get on-chain funding and a refund
 
@@ -22,11 +28,13 @@ const {p2wpkh} = payments;
     ask: <Ask Function>
     lnd: <Authenticated LND API Object>
     logger: <Winston Logger Object>
+    [rate]: <Chain Fee Rate Tokens Per VByte Number>
     tokens: <Fund Tokens Number>
   }
 
   @returns via cbk or Promise
   {
+    address: <Transit Address String>
     id: <Transaction Id Hex String>
     index: <Transit Public Key Index Number>
     [inputs]: [{
@@ -35,13 +43,16 @@ const {p2wpkh} = payments;
       transaction_id: <Transaction Hex Id String>
       transaction_vout: <Transaction Output Index Number>
     }]
+    key: <Transit Key Public Key Hex String>
+    output: <Transit Output Script Hex String>
     [psbt]: <Transaction As Finalized PSBT Hex String>
     refund: <Refund Transaction Hex String>
+    script: <Transit Signing Witness Script Hex String>
     transaction: <Raw Transaction Hex String>
     vout: <Funds Reserved At Output Index Number>
   }
 */
-module.exports = ({ask, lnd, logger, tokens}, cbk) => {
+module.exports = ({ask, lnd, logger, rate, tokens}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -81,11 +92,6 @@ module.exports = ({ask, lnd, logger, tokens}, cbk) => {
         return getPublicKey({lnd, family: familyTemporary}, cbk);
       }],
 
-      // Create a refund address
-      createRefund: ['getTransitKey', ({}, cbk) => {
-        return createChainAddress({lnd}, cbk);
-      }],
-
       // Derive a transit address from the transit key
       transit: [
         'getNetwork',
@@ -104,20 +110,45 @@ module.exports = ({ask, lnd, logger, tokens}, cbk) => {
           ask,
           lnd,
           logger,
+          chain_fee_tokens_per_vbyte: rate || undefined,
           outputs: [{tokens, address: transit.address}],
         },
         cbk);
       }],
 
-      // Funding transaction output index
+      // Create a refund address
+      createRefund: ['getFunding', ({}, cbk) => {
+        return createChainAddress({lnd}, cbk);
+      }],
+
+      // Confirm the funding transaction output
       transactionVout: [
         'getFunding',
         'transit',
         ({getFunding, transit}, cbk) =>
       {
-        const vout = fromHex(getFunding.transaction).outs.findIndex(output => {
-          return output.script.equals(transit.output);
+        const {transaction} = getFunding;
+
+        if (!transaction) {
+          return cbk([400, 'ExpectedFundedTransactionToReserveTransitFunds']);
+        }
+
+        const vout = fromHex(transaction).outs.findIndex(({script}) => {
+          return script.equals(transit.output);
         });
+
+        if (vout === notFoundIndex) {
+          return cbk([400, 'ExpectedTransitTxOutputPayingToTransitAddress']);
+        }
+
+        // The transaction must have the output sending to the address
+        if (fromHex(transaction).outs[vout].value !== tokens) {
+          return cbk([
+            400,
+            'UnexpectedFundingAmountPayingToTransitAddress',
+            {expected: tokens},
+          ]);
+        }
 
         return cbk(null, vout);
       }],
@@ -157,22 +188,40 @@ module.exports = ({ask, lnd, logger, tokens}, cbk) => {
       // Final funding details, including a refund paying out of transit
       funding: [
         'getFunding',
+        'getNetwork',
         'getRefund',
         'getTransitKey',
         'transactionVout',
-        ({getFunding, getRefund, getTransitKey, transactionVout}, cbk) =>
+        'transit',
+        ({
+          getFunding,
+          getNetwork,
+          getRefund,
+          getTransitKey,
+          transactionVout,
+          transit,
+        },
+        cbk) =>
       {
+        const network = networks[getNetwork.bitcoinjs];
+
+        const {data} = fromBech32(transit.address, network);
+
         return cbk(null, {
+          address: transit.address,
           id: getFunding.id,
           index: getTransitKey.index,
           inputs: getFunding.inputs,
+          key: getTransitKey.public_key,
+          output: bufferAsHex(toOutputScript(transit.address, network)),
           psbt: getFunding.psbt,
           refund: getRefund.refund,
+          script: bufferAsHex(p2pkh({hash: data}).output),
           transaction: getFunding.transaction,
           vout: transactionVout,
         });
       }],
     },
-    returnResult({reject, resolve, of: 'funding'}));
+    returnResult({reject, resolve, of: 'funding'}, cbk));
   });
 };

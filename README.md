@@ -583,6 +583,38 @@ Make a refund transaction for transit funds
       refund: <Fully Signed Refund Transaction Hex String>
     }
 
+### `reserveTransitFunds`
+
+Get on-chain funding and a refund
+
+    {
+      ask: <Ask Function>
+      lnd: <Authenticated LND API Object>
+      logger: <Winston Logger Object>
+      [rate]: <Chain Fee Rate Tokens Per VByte Number>
+      tokens: <Fund Tokens Number>
+    }
+
+    @returns via cbk or Promise
+    {
+      address: <Transit Address String>
+      id: <Transaction Id Hex String>
+      index: <Transit Public Key Index Number>
+      [inputs]: [{
+        [lock_expires_at]: <UTXO Lock Expires At ISO 8601 Date String>
+        [lock_id]: <UTXO Lock Id Hex String>
+        transaction_id: <Transaction Hex Id String>
+        transaction_vout: <Transaction Output Index Number>
+      }]
+      key: <Transit Key Public Key Hex String>
+      output: <Transit Output Script Hex String>
+      [psbt]: <Transaction As Finalized PSBT Hex String>
+      refund: <Refund Transaction Hex String>
+      script: <Transit Signing Witness Script Hex String>
+      transaction: <Raw Transaction Hex String>
+      vout: <Funds Reserved At Output Index Number>
+    }
+
 ### `updateChannelFee`
 
 Update the fee for an individual channel
