@@ -1,5 +1,14 @@
 # Versions
 
+## 3.4.0
+
+- `broadcastTransaction`: Add method to broadcast a tx until it confirms
+- `getFundedTransaction`: Add method to get a transaction paying to addresses
+- `getTransitRefund`: Add method to generate a refund for a transit transaction
+- `maintainUtxoLocks`: Keep an unspent locked while related tx is unconfirmed
+- `reserveTransitFunds`: Add method to reserve funds in a transit output
+- `stopAllHtlcs`: Add method to stop all HTLCs with a peer
+
 ## 3.3.0
 
 - `updateChannelFee`: Add method to update a channel fee

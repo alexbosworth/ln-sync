@@ -25,6 +25,22 @@ Confirm that a peer will accept a channel open
       is_accepted: <Channel Proposal Is Accepted Bool>
     }
 
+### `broadcastTransaction`
+
+Broadcast a chain transaction until it gets confirmed in a block
+
+    {
+      [description]: <Transaction Description String>
+      lnd: <Authenticated LND API Object>
+      logger: <Winston Logger Object>
+      transaction: <Transaction String>
+    }
+
+    @returns via cbk or Promise
+    {
+      transaction_confirmed_in_block: <Block Height Number>
+    }
+
 ### `connectPeer`
 
 Connect a peer
@@ -122,6 +138,35 @@ Get all invoices
         secret: <Secret Preimage Hex String>
         tokens: <Tokens Number>
       }]
+    }
+
+### `getFundedTransaction`
+
+Get a funded transaction
+
+    {
+      ask: <Inquirer Ask Function>
+      [chain_fee_tokens_per_vbyte]: <Internal Funding Uses Tokens/Vbyte Number>
+      [is_external]: <Transaction Uses External Funds Bool>
+      lnd: Authenticated LND API Object>
+      logger: <Winston Logger Object>
+      outputs: [{
+        address: <Chain Address String>
+        tokens: <Tokens To Send To Output Number>
+      }]
+    }
+
+    @returns via cbk or Promise
+    {
+      id: <Transaction Id Hex String>
+      [inputs]: [{
+        [lock_expires_at]: <UTXO Lock Expires At ISO 8601 Date String>
+        [lock_id]: <UTXO Lock Id Hex String>
+        transaction_id: <Transaction Hex Id String>
+        transaction_vout: <Transaction Output Index Number>
+      }]
+      [psbt]: <Transaction As Finalized PSBT Hex String>
+      transaction: <Raw Transaction Hex String>
     }
 
 ### `getLiquidity`

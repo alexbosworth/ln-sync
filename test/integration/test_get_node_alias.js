@@ -1,5 +1,5 @@
-const {test} = require('@alexbosworth/tap');
 const {spawnLightningCluster} = require('ln-docker-daemons');
+const {test} = require('@alexbosworth/tap');
 
 const {getNodeAlias} = require('./../../');
 
