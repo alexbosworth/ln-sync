@@ -1,7 +1,7 @@
-const {percentile} = require('stats-lite');
+const percentile = require('./percentile');
 
+const above = 0.9;
 const {round} = Math;
-const topPercentile = 0.9;
 
 /** Liquidity tokens
 
@@ -96,7 +96,7 @@ module.exports = args => {
   const tokens = activeChannels.map(n => n[`${balanceType}_balance`]);
 
   if (!!args.is_top) {
-    return {tokens: [round(percentile(tokens, topPercentile))]};
+    return {tokens: [round(percentile({above, tokens}).top)]};
   }
 
   return {tokens};

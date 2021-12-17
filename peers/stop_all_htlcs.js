@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
 const asyncUntil = require('async/until');
-const {getChannels} = require('lightning');
+const {getChannels} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
-const {subscribeToForwardRequests} = require('lightning');
+const {subscribeToForwardRequests} = require('ln-service');
 
 const {isArray} = Array;
 const stopHtlcsIntervalMs = 3000;

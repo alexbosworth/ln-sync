@@ -1,9 +1,9 @@
 const asyncAuto = require('async/auto');
-const {broadcastChainTransaction} = require('lightning');
-const {getHeight} = require('lightning');
+const {broadcastChainTransaction} = require('ln-service');
+const {getHeight} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
-const {subscribeToBlocks} = require('lightning');
-const {subscribeToChainAddress} = require('lightning');
+const {subscribeToBlocks} = require('ln-service');
+const {subscribeToChainAddress} = require('ln-service');
 const {Transaction} = require('bitcoinjs-lib');
 
 const bufferAsHex = buffer => buffer.toString('hex');

@@ -1,7 +1,7 @@
 const asyncRetry = require('async/retry');
-const {createChainAddress} = require('lightning');
-const {getChainBalance} = require('lightning');
-const {getUtxos} = require('lightning');
+const {createChainAddress} = require('ln-service');
+const {getChainBalance} = require('ln-service');
+const {getUtxos} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
 const {test} = require('@alexbosworth/tap');
 

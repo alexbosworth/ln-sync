@@ -1,8 +1,8 @@
-const {addPeer} = require('lightning');
+const {addPeer} = require('ln-service');
 const asyncAuto = require('async/auto');
 const asyncDetectSeries = require('async/detectSeries');
-const {getNode} = require('lightning');
-const {getPeers} = require('lightning');
+const {getNode} = require('ln-service');
+const {getPeers} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const defaultRetryDelayMs = 1;

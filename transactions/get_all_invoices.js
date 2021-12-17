@@ -1,6 +1,6 @@
 const asyncAuto = require('async/auto');
 const asyncUntil = require('async/until');
-const {getInvoices} = require('lightning');
+const {getInvoices} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const defaultInvoicesLimit = 100;

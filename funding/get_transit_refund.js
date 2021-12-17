@@ -3,7 +3,7 @@ const asyncAuto = require('async/auto');
 const {networks} = require('bitcoinjs-lib');
 const {payments} = require('bitcoinjs-lib');
 const {returnResult} = require('asyncjs-util');
-const {signTransaction} = require('lightning');
+const {signTransaction} = require('ln-service');
 const {Transaction} = require('bitcoinjs-lib');
 
 const bufferAsHex = buffer => buffer.toString('hex');

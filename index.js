@@ -1,4 +1,5 @@
 const {acceptsChannelOpen} = require('./peers');
+const {askForFeeRate} = require('./funding');
 const {broadcastTransaction} = require('./chain');
 const {connectPeer} = require('./peers');
 const {findKey} = require('./peers');
@@ -23,6 +24,7 @@ const {waitForPendingOpen} = require('./peers');
 
 module.exports = {
   acceptsChannelOpen,
+  askForFeeRate,
   broadcastTransaction,
   connectPeer,
   findKey,

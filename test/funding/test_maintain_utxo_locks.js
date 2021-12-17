@@ -80,7 +80,7 @@ const tests = [
   {
     args: makeArgs({lnd: undefined}),
     description: 'An authenticated lnd object is required.',
-    error: [400, 'ExpectedAuthenticatedLndTomaintainUtxoLocks'],
+    error: [400, 'ExpectedAuthenticatedLndToMaintainUtxoLocks'],
   },
   {
     args: makeArgs({}),

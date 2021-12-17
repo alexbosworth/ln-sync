@@ -1,10 +1,10 @@
 const asyncAuto = require('async/auto');
 const asyncRetry = require('async/retry');
-const {createChainAddress} = require('lightning');
+const {createChainAddress} = require('ln-service');
 const {extractTransaction} = require('psbt');
-const {getChainTransactions} = require('lightning');
-const {fundPsbt} = require('lightning');
-const {signPsbt} = require('lightning');
+const {getChainTransactions} = require('ln-service');
+const {fundPsbt} = require('ln-service');
+const {signPsbt} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
 const {test} = require('@alexbosworth/tap');
 

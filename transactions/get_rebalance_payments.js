@@ -1,7 +1,7 @@
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
 const asyncMapLimit = require('async/mapLimit');
-const {getPayment} = require('lightning');
+const {getPayment} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const getAllInvoices = require('./get_all_invoices');

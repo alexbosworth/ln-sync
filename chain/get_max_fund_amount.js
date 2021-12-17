@@ -1,10 +1,10 @@
 const asyncAuto = require('async/auto');
 const asyncEach = require('async/each');
-const {fundPsbt} = require('lightning');
+const {fundPsbt} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
-const {signPsbt} = require('lightning');
+const {signPsbt} = require('ln-service');
 const {Transaction} = require('bitcoinjs-lib');
-const {unlockUtxo} = require('lightning');
+const {unlockUtxo} = require('ln-service');
 
 const dust = 546;
 const {fromHex} = Transaction;

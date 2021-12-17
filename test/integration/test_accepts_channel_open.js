@@ -1,13 +1,13 @@
 const {once} = require('events');
 
-const {addPeer} = require('lightning');
+const {addPeer} = require('ln-service');
 const asyncAuto = require('async/auto');
 const asyncRetry = require('async/retry');
-const {cancelPendingChannel} = require('lightning');
-const {getPendingChannels} = require('lightning');
-const {openChannels} = require('lightning');
+const {cancelPendingChannel} = require('ln-service');
+const {getPendingChannels} = require('ln-service');
+const {openChannels} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
-const {subscribeToOpenRequests} = require('lightning');
+const {subscribeToOpenRequests} = require('ln-service');
 const {test} = require('@alexbosworth/tap');
 
 const {acceptsChannelOpen} = require('./../../');

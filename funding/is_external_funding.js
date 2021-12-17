@@ -1,10 +1,10 @@
 const asyncAuto = require('async/auto');
 const asyncEach = require('async/each');
 const asyncReflect = require('async/reflect');
-const {fundPsbt} = require('lightning');
-const {getWalletVersion} = require('lightning');
+const {fundPsbt} = require('ln-service');
+const {getWalletVersion} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
-const {unlockUtxo} = require('lightning');
+const {unlockUtxo} = require('ln-service');
 
 const {isArray} = Array;
 const noInternalFundingVersions = ['0.11.0-beta', '0.11.1-beta'];

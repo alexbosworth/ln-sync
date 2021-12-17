@@ -1,9 +1,9 @@
 const asyncAuto = require('async/auto');
-const {getChannel} = require('lightning');
-const {getChannels} = require('lightning');
-const {getPendingChannels} = require('lightning');
+const {getChannel} = require('ln-service');
+const {getChannels} = require('ln-service');
+const {getPendingChannels} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
-const {updateRoutingFees} = require('lightning');
+const {updateRoutingFees} = require('ln-service');
 
 const {abs} = Math;
 const asOut = n => `${n.transaction_id}:${n.transaction_vout}`;

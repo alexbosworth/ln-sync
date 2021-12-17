@@ -1,9 +1,9 @@
 const asyncAuto = require('async/auto');
 const asyncEach = require('async/each');
 const asyncUntil = require('async/until');
-const {getChainTransactions} = require('lightning');
-const {getHeight} = require('lightning');
-const {lockUtxo} = require('lightning');
+const {getChainTransactions} = require('ln-service');
+const {getHeight} = require('ln-service');
+const {lockUtxo} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const asOutpoint = n => `${n.transaction_id}:${n.transaction_vout}`;
@@ -45,7 +45,7 @@ module.exports = ({id, inputs, interval, lnd}, cbk) => {
         }
 
         if (!lnd) {
-          return cbk([400, 'ExpectedAuthenticatedLndTomaintainUtxoLocks']);
+          return cbk([400, 'ExpectedAuthenticatedLndToMaintainUtxoLocks']);
         }
 
         return cbk();

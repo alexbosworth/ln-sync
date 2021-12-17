@@ -1,10 +1,10 @@
-const {addPeer} = require('lightning');
+const {addPeer} = require('ln-service');
 const asyncRetry = require('async/retry');
-const {fundPendingChannels} = require('lightning');
-const {fundPsbt} = require('lightning');
-const {getPendingChannels} = require('lightning');
-const {openChannels} = require('lightning');
-const {signPsbt} = require('lightning');
+const {fundPendingChannels} = require('ln-service');
+const {fundPsbt} = require('ln-service');
+const {getPendingChannels} = require('ln-service');
+const {openChannels} = require('ln-service');
+const {signPsbt} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
 const {test} = require('@alexbosworth/tap');
 

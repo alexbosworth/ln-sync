@@ -1,6 +1,6 @@
 const asyncAuto = require('async/auto');
 const asyncRetry = require('async/retry');
-const {getPendingChannels} = require('lightning');
+const {getPendingChannels} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 /** Wait for an incoming pending open channel matching specific criteria

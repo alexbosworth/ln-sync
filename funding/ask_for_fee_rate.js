@@ -1,5 +1,5 @@
 const asyncAuto = require('async/auto');
-const {getChainFeeRate} = require('lightning');
+const {getChainFeeRate} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const fastConfirmationTarget = 2;

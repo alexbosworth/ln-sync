@@ -1,7 +1,7 @@
 const asyncAuto = require('async/auto');
-const {fundPsbt} = require('lightning');
+const {fundPsbt} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
-const {signPsbt} = require('lightning');
+const {signPsbt} = require('ln-service');
 const {Transaction} = require('bitcoinjs-lib');
 
 const askForFeeRate = require('./ask_for_fee_rate');

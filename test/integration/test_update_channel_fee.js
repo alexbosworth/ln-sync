@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
 const asyncRetry = require('async/retry');
-const {getChannel} = require('lightning');
-const {getChannels} = require('lightning');
-const {openChannel} = require('lightning');
+const {getChannel} = require('ln-service');
+const {getChannels} = require('ln-service');
+const {openChannel} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
 const {test} = require('@alexbosworth/tap');
 

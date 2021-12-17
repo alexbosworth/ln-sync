@@ -1,6 +1,6 @@
 const asyncAuto = require('async/auto');
-const {cancelPendingChannel} = require('lightning');
-const {openChannels} = require('lightning');
+const {cancelPendingChannel} = require('ln-service');
+const {openChannels} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 /** Confirm that a peer will accept a channel open

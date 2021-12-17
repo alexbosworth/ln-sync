@@ -1,5 +1,9 @@
 # Versions
 
+## 3.5.0
+
+- `askForFeeRate`: Add method to ask for a chain fee rate
+
 ## 3.4.0
 
 - `broadcastTransaction`: Add method to broadcast a tx until it confirms

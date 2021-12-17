@@ -1,7 +1,9 @@
 const {makeLnd} = require('mock-lnd');
 const {test} = require('@alexbosworth/tap');
 
-const method = require('./../../funding/ask_for_fee_rate');
+const {askForFeeRate} = require('./../../');
+
+const method = askForFeeRate;
 
 const makeArgs = overrides => {
   const args = {

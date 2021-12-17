@@ -25,6 +25,20 @@ Confirm that a peer will accept a channel open
       is_accepted: <Channel Proposal Is Accepted Bool>
     }
 
+### `askForFeeRate`
+
+Ask to get a chain fee rate
+
+    {
+      ask: <Inquirer Ask Function>
+      lnd: <Authenticated LND API Object>
+    }
+
+    @returns via cbk or Promise
+    {
+      tokens_per_vbyte: <Chain Fee Tokens Per VByte Number>
+    }
+
 ### `broadcastTransaction`
 
 Broadcast a chain transaction until it gets confirmed in a block
