@@ -1,5 +1,9 @@
 # Versions
 
+## 3.6.1
+
+- `updateFeeRate`: Fix issue where fee rate would not update to zero
+
 ## 3.6.0
 
 - `reserveTransitFunds`: Add support for specifying chain fee `rate`

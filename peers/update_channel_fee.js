@@ -112,10 +112,12 @@ module.exports = (args, cbk) => {
 
       // Update the fee rate to the specified rate
       updateFeeRate: ['policy', ({policy}, cbk) => {
+        const isFeeRateAdjusted = args.fee_rate !== undefined;
+
         return updateRoutingFees({
           base_fee_mtokens: args.base_fee_mtokens || policy.base_fee_mtokens,
           cltv_delta: args.cltv_delta || policy.cltv_delta,
-          fee_rate: args.fee_rate || policy.fee_rate,
+          fee_rate: isFeeRateAdjusted ? args.fee_rate : policy.fee_rate,
           lnd: args.lnd,
           max_htlc_mtokens: args.max_htlc_mtokens || policy.max_htlc_mtokens,
           min_htlc_mtokens: args.min_htlc_mtokens || policy.min_htlc_mtokens,
