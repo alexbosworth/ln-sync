@@ -29,23 +29,9 @@ const tests = [
     error: [400, 'MaxLiquidityFeeRateNotSupportedForOutbound'],
   },
   {
-    args: {lnd: makeLnd({}), min_node_score: 1},
-    description: 'A request method is required when node score specified',
-    error: [400, 'ExpectedRequestFunctionToFilterByNodeScore'],
-  },
-  {
     args: {lnd: makeLnd({}), with: 'b'},
     description: 'With is expected to be an array',
     error: [400, 'ExpectedArrayOfPublicKeysToGetLiquidity'],
-  },
-  {
-    args: {
-      lnd: makeLnd({}),
-      min_node_score: 1,
-      request: ({}, cbk) => cbk('err'),
-    },
-    description: 'Errors from request method are passed back',
-    error: [503, 'UnexpectedErrorGettingNodeScores'],
   },
   {
     args: {is_top: true, lnd: makeLnd({})},

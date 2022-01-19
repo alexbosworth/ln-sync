@@ -14,6 +14,7 @@ const {getPayments} = require('./transactions');
 const {getPeerLiquidity} = require('./peers');
 const {getRebalancePayments} = require('./transactions');
 const {getScoredNodes} = require('./graph');
+const {getSeedNodes} = require('./graph');
 const {getTransactionRecord} = require('./chain');
 const {getTransitRefund} = require('./funding');
 const {maintainUtxoLocks} = require('./funding');
@@ -39,6 +40,7 @@ module.exports = {
   getPeerLiquidity,
   getRebalancePayments,
   getScoredNodes,
+  getSeedNodes,
   getTransactionRecord,
   getTransitRefund,
   maintainUtxoLocks,

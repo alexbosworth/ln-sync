@@ -16,10 +16,6 @@ const {round} = Math;
     [is_top]: <Return Top Liquidity Bool>
     [max_fee_rate]: <Eliminate Inbound Liquidity With Fee Rate Above Number>
     [min_node_score]: <Eliminate Liquidity With Score Below Score Number>
-    [nodes]: [{
-      public_key: <Public Key Hex String>
-      score: <Node Score Number>
-    }]
     policies: [[{
       fee_rate: <Fee Rate Parts Per Million Number>
       public_key: <Public Key Hex String>
@@ -77,18 +73,6 @@ module.exports = args => {
       const feeRate = inboundFeeRates[n.partner_public_key];
 
       return !!feeRate && feeRate <= args.max_fee_rate;
-    })
-    .filter(channel => {
-      // Exit early when there is no node score restriction
-      if (!args.min_node_score) {
-        return true;
-      }
-
-      const peerPublicKey = channel.partner_public_key;
-
-      const node = args.nodes.find(n => n.public_key === peerPublicKey);
-
-      return !!node && node.score >= args.min_node_score;
     });
 
   const balanceType = !!args.is_outbound ? 'local' : 'remote';

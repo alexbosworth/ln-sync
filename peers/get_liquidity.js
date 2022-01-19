@@ -12,15 +12,11 @@ const {isArray} = Array;
 
 /** Get the channel available liquidity
 
-  A request function is required when min_node_score is specified
-
   {
     [is_outbound]: <Return Outbound Liquidity Bool>
     [is_top]: <Return Top Liquidity Bool>
     lnd: <Authenticated LND API Object>
-    [min_node_score]: <Minimum Node Score Number>
     [max_fee_rate]: <Max Inbound Fee Rate Parts Per Million Number>
-    [request]: <Request Function>
     [with]: [<Liquidity With Specific Node Public Key Hex String>]
   }
 
@@ -40,10 +36,6 @@ module.exports = (args, cbk) => {
 
         if (!args.lnd) {
           return cbk([400, 'ExpectedLndToGetLiquidity']);
-        }
-
-        if (!!args.min_node_score && !args.request) {
-          return cbk([400, 'ExpectedRequestFunctionToFilterByNodeScore']);
         }
 
         if (!!args.with && !isArray(args.with)) {
@@ -79,26 +71,12 @@ module.exports = (args, cbk) => {
         cbk);
       }],
 
-      // Get node scores
-      getScores: ['getNetwork', ({getNetwork}, cbk) => {
-        if (!args.min_node_score) {
-          return cbk(null, {});
-        }
-
-        return getScoredNodes({
-          network: getNetwork.network,
-          request: args.request,
-        },
-        cbk);
-      }],
-
       // List of tokens to sum
       tokens: [
         'getChannels',
         'getNodeKey',
         'getPolicies',
-        'getScores',
-        ({getChannels, getNodeKey, getPolicies, getScores}, cbk) =>
+        ({getChannels, getNodeKey, getPolicies}, cbk) =>
       {
         return cbk(null, liquidityTokens({
           channels: getChannels.channels,
@@ -106,7 +84,6 @@ module.exports = (args, cbk) => {
           is_top: args.is_top,
           max_fee_rate: args.max_fee_rate,
           min_node_score: args.min_node_score,
-          nodes: getScores.nodes,
           policies: getPolicies.channels.map(n => n.policies),
           public_key: getNodeKey.public_key,
           with: args.with,
