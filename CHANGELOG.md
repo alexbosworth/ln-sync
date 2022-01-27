@@ -1,6 +1,6 @@
 # Versions
 
-## 3.7.0
+## 3.7.1
 
 - `getLiquidity`: Remove support for `min_node_score` due to API EOL
 - `getSeedNodes`: Add method to get some recommended starting nodes
