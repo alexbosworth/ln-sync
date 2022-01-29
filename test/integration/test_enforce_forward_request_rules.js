@@ -1,0 +1,262 @@
+const {addPeer} = require('ln-service');
+const asyncRetry = require('async/retry');
+const {createChainAddress} = require('ln-service');
+const {createHodlInvoice} = require('ln-service');
+const {createInvoice} = require('ln-service');
+const {deleteForwardingReputations} = require('ln-service');
+const {openChannel} = require('ln-service');
+const {pay} = require('ln-service');
+const {sendToChainAddress} = require('ln-service');
+const {settleHodlInvoice} = require('ln-service');
+const {spawnLightningCluster} = require('ln-docker-daemons');
+const {subscribeToInvoice} = require('ln-service');
+const {test} = require('@alexbosworth/tap');
+
+const {enforceForwardRequestRules} = require('./../../');
+
+const capacity = 1e6;
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+const interval = 10;
+const maturityBlocks = 100;
+const size = 3;
+const targetTokens = 1e7;
+const times = 1000;
+const tokens = 100;
+
+const lnService = require('ln-service');
+
+return test('Request rules are enforced', async ({end, fail, strictSame}) => {
+  const {kill, nodes} = await spawnLightningCluster({size});
+
+  const [{generate, id, lnd}, target, remote] = nodes;
+
+  try {
+    // Make some coins
+    await generate({count: maturityBlocks});
+
+    // Peer up control and remote to help with graph search
+    await addPeer({lnd, public_key: remote.id, socket: remote.socket});
+
+    // Send some coins to target
+    await sendToChainAddress({
+      lnd,
+      address: (await createChainAddress({lnd: target.lnd})).address,
+      tokens: targetTokens,
+    });
+
+    // Setup a channel between control and target
+    await asyncRetry({interval, times}, async () => {
+      await generate({});
+
+      await openChannel({
+        lnd,
+        local_tokens: capacity,
+        partner_public_key: target.id,
+        partner_socket: target.socket,
+      });
+    });
+
+    // Setup a channel between target and remote
+    await asyncRetry({interval, times}, async () => {
+      await generate({});
+
+      await openChannel({
+        lnd: target.lnd,
+        local_tokens: capacity,
+        partner_public_key: remote.id,
+        partner_socket: remote.socket,
+      });
+    });
+
+    // A block must have appeared recently
+    {
+      // Make sure payments work normally
+      await asyncRetry({interval, times}, async () => {
+        await generate({});
+
+        await pay({
+          lnd,
+          request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+        });
+      });
+
+      // Stop payments when the last block was too long ago
+      const sub = enforceForwardRequestRules({
+        lnd: target.lnd,
+        max_seconds_since_last_block: 1,
+      });
+
+      const rejection = [];
+
+      sub.on('rejected', rejected => rejection.push(rejected));
+
+      await target.generate({});
+
+      // Wait to make the block take too long
+      await delay(2000);
+
+      // Payment will be rejected
+      try {
+        const payment = await pay({
+          lnd,
+          request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+        });
+
+        strictSame(payment, null, 'Payment should have been blocked');
+      } catch (err) {
+        strictSame(
+          err,
+          [503, 'PaymentPathfindingFailedToFindPossibleRoute'],
+          'Blocks that take too long trigger rejection'
+        );
+      }
+
+      const [rejected] = rejection;
+
+      strictSame(
+        rejected.reject_reason,
+        'LastBlockReceivedTooLongAgo',
+        'Block time constraint returns block timing reason'
+      );
+
+      sub.removeAllListeners();
+    }
+
+    // Block all payments with zero pending payments allowed
+    {
+      // Start from a clean state
+      await deleteForwardingReputations({lnd});
+
+      // Make sure payments work normally
+      await asyncRetry({interval, times}, async () => {
+        await generate({});
+
+        await pay({
+          lnd,
+          request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+        });
+      });
+
+      // Stop payments
+      const sub = enforceForwardRequestRules({
+        lnd: target.lnd,
+        max_new_pending_per_hour: 0,
+      });
+
+      const rejection = [];
+
+      sub.on('rejected', n => rejection.push(n.reject_reason));
+
+      await generate({});
+
+      // Try to make a payment
+      try {
+        const payment = await pay({
+          lnd,
+          request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+        });
+
+        strictSame(payment, null, 'No payment should be made');
+      } catch (err) {
+        strictSame(
+          err,
+          [503, 'PaymentPathfindingFailedToFindPossibleRoute'],
+          'All payments are blocked'
+        );
+      }
+
+      const [rejected] = rejection;
+
+      strictSame(rejected, 'NoNewHtlcsAccepted', 'All payments blocked now');
+
+      sub.removeAllListeners();
+    }
+
+    // New pending payments are limited by hour
+    {
+      // Start from a clean state
+      await deleteForwardingReputations({lnd});
+
+      // Make sure payments work normally
+      await asyncRetry({interval, times}, async () => {
+        await generate({});
+
+        await pay({
+          lnd,
+          request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+        });
+      });
+
+      // Stop payments when there is a pending payment
+      const sub = enforceForwardRequestRules({
+        lnd: target.lnd,
+        max_new_pending_per_hour: 1,
+      });
+
+      const rejection = [];
+
+      sub.on('rejected', rejected => rejection.push(rejected));
+
+      // To create a pending payment, remote will hold the HTLC
+      const hold = await createHodlInvoice({tokens, lnd: remote.lnd});
+
+      const invoiceSub = subscribeToInvoice({id: hold.id, lnd: remote.lnd});
+
+      // Wait for the HTLC to be held
+      invoiceSub.on('invoice_updated', async invoice => {
+        if (!invoice.is_held) {
+          return;
+        }
+
+        // Now that a payment is held, a new payment will be rate limited
+        try {
+          const payment = await pay({
+            lnd,
+            request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+          });
+          strictSame(payment, null, 'Expected no payment can be made');
+        } catch (err) {
+          strictSame(
+            err,
+            [503, 'PaymentPathfindingFailedToFindPossibleRoute'],
+            'Pending HTLCs block new payments'
+          );
+        }
+
+        // The rate-limited payment generated a rejection event
+        const [rejected] = rejection;
+
+        strictSame(
+          rejected.reject_reason,
+          'TooManyNewPendingHtlcsInThePastHour',
+          'Reason for rejection is too many pending HTLCs'
+        );
+
+        // Release the hold to free up a pending slot
+        await settleHodlInvoice({lnd: remote.lnd, secret: hold.secret});
+      });
+
+      // Pay to the hold invoice
+      const payment = await pay({lnd, request: hold.request});
+
+      // After paying the hold invoice, should be able to pay normally again
+      await deleteForwardingReputations({lnd});
+
+      // Make a payment to confirm things are back to normal
+      await asyncRetry({interval, times}, async () => {
+        await pay({
+          lnd,
+          request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+        });
+      });
+
+      sub.removeAllListeners();
+    }
+  } catch (err) {
+    strictSame(err, null, 'Expected no error');
+  } finally {
+    await kill({});
+
+    return end();
+  }
+});

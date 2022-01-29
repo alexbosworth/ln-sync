@@ -2,6 +2,7 @@ const {acceptsChannelOpen} = require('./peers');
 const {askForFeeRate} = require('./funding');
 const {broadcastTransaction} = require('./chain');
 const {connectPeer} = require('./peers');
+const {enforceForwardRequestRules} = require('./monitor');
 const {findKey} = require('./peers');
 const {formatTokens} = require('./display');
 const {getAllInvoices} = require('./transactions');
@@ -28,6 +29,7 @@ module.exports = {
   askForFeeRate,
   broadcastTransaction,
   connectPeer,
+  enforceForwardRequestRules,
   findKey,
   formatTokens,
   getAllInvoices,

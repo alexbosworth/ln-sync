@@ -1,5 +1,9 @@
 # Versions
 
+## 3.8.0
+
+- `enforceForwardRequestRules`: Add method to enforce rules on HTLC requests
+
 ## 3.7.1
 
 - `getLiquidity`: Remove support for `min_node_score` due to API EOL
