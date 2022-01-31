@@ -16,6 +16,7 @@ const {enforceForwardRequestRules} = require('./../../');
 
 const capacity = 1e6;
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+const give = 1e5;
 const interval = 10;
 const maturityBlocks = 100;
 const size = 3;
@@ -50,6 +51,7 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
 
       await openChannel({
         lnd,
+        give_tokens: give,
         local_tokens: capacity,
         partner_public_key: target.id,
         partner_socket: target.socket,
@@ -61,6 +63,7 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
       await generate({});
 
       await openChannel({
+        give_tokens: give,
         lnd: target.lnd,
         local_tokens: capacity,
         partner_public_key: remote.id,
@@ -118,6 +121,79 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
         'LastBlockReceivedTooLongAgo',
         'Block time constraint returns block timing reason'
       );
+
+      sub.removeAllListeners();
+    }
+
+    // Channels must have many confirmations
+    {
+      // Start from a clean state
+      await deleteForwardingReputations({lnd});
+
+      // Make sure payments work normally
+      await asyncRetry({interval, times}, async () => {
+        await generate({});
+
+        await pay({
+          lnd,
+          request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+        });
+      });
+
+      // Stop payments when channels are too new
+      const sub = enforceForwardRequestRules({
+        lnd: target.lnd,
+        min_activation_age: 50,
+      });
+
+      const rejection = [];
+
+      sub.on('rejected', rejected => rejection.push(rejected));
+
+      // Payment will be rejected because the channels are new
+      try {
+        const payment = await pay({
+          lnd,
+          request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+        });
+
+        strictSame(payment, null, 'Payment should have been blocked');
+      } catch (err) {
+        strictSame(
+          err,
+          [503, 'PaymentPathfindingFailedToFindPossibleRoute'],
+          'New channels reject payments'
+        );
+      }
+
+      const [rejected] = rejection;
+
+      strictSame(
+        rejected.reject_reason,
+        'WaitingForChannelConfirmationActivation',
+        'Activation age successfully blocks forwards'
+      );
+
+      // Reset to clean MC state
+      await deleteForwardingReputations({lnd});
+
+      await target.generate({count: 100});
+
+      try {
+        // Make sure payments work normally after blocks confirm
+        const normalPayment = await asyncRetry({interval, times}, async () => {
+          await target.generate({count: 100});
+
+          return await pay({
+            lnd,
+            request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+          });
+        });
+
+        strictSame(!!normalPayment, true, 'Payment is made after confs');
+      } catch (err) {
+        strictSame(err, null, 'Expected no error after enough blocks');
+      }
 
       sub.removeAllListeners();
     }
@@ -251,6 +327,84 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
       });
 
       sub.removeAllListeners();
+    }
+
+    // Forwards can only flow in allowed direction
+    {
+      // Start from a clean state
+      await deleteForwardingReputations({lnd});
+
+      // Make sure payments work normally
+      await asyncRetry({interval, times}, async () => {
+        await generate({});
+
+        await pay({
+          lnd,
+          request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+        });
+      });
+
+      // Stop payments when there is a pending payment
+      const sub = enforceForwardRequestRules({
+        lnd: target.lnd,
+        only_allow: [{inbound_peer: remote.id, outbound_peer: id}],
+      });
+
+      const rejection = [];
+
+      sub.on('rejected', rejected => rejection.push(rejected));
+
+      // Payments are rejected when not going from remote to control
+      try {
+        await pay({
+          lnd,
+          request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+        });
+
+        strictSame(payment, null, 'Expected that control to remote blocked');
+      } catch (err) {
+        strictSame(
+          err,
+          [503, 'PaymentPathfindingFailedToFindPossibleRoute'],
+          'Control to remote payments blocked'
+        );
+      }
+
+      // Payments from remote to control does work
+      try {
+        await asyncRetry({interval, times}, async () => {
+          await generate({});
+
+          await pay({
+            lnd: remote.lnd,
+            request: (await createInvoice({tokens, lnd})).request,
+          });
+        });
+      } catch (err) {
+        strictSame(err, null, 'Remote to control should work');
+      }
+
+      // A rejection event was generated
+      const [rejected] = rejection;
+
+      strictSame(
+        rejected.reject_reason,
+        'RoutingPairNotDeclaredInOnlyAllowList',
+        'Payments are limited by allow list'
+      );
+
+      sub.removeAllListeners();
+
+      // After paying the hold invoice, should be able to pay normally again
+      await deleteForwardingReputations({lnd});
+
+      // Make a payment to confirm things are back to normal
+      await asyncRetry({interval, times}, async () => {
+        await pay({
+          lnd,
+          request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+        });
+      });
     }
   } catch (err) {
     strictSame(err, null, 'Expected no error');

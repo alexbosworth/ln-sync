@@ -8,6 +8,7 @@
     "async": "3.2.3",
     "asyncjs-util": "1.2.8",
     "bitcoinjs-lib": "6.0.1",
+    "bolt07": "1.8.0",
     "colorette": "2.0.16",
     "ln-service": "53.6.0",
     "psbt": "1.1.11"
@@ -15,7 +16,7 @@
   "devDependencies": {
     "@alexbosworth/tap": "15.0.10",
     "mock-lnd": "1.4.1",
-    "ln-docker-daemons": "2.2.1"
+    "ln-docker-daemons": "2.2.2"
   },
   "engines": {
     "node": ">=12.20"
@@ -34,7 +35,7 @@
   },
   "scripts": {
     "integration-tests": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/integration/*.js",
-    "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/chain/*.js test/display/*.js test/funding/*.js test/graph/*.js test/peers/*.js"
+    "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 -t 90 test/chain/*.js test/display/*.js test/funding/*.js test/graph/*.js test/peers/*.js"
   },
-  "version": "3.8.0"
+  "version": "3.9.0"
 }

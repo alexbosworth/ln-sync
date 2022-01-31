@@ -1,22 +1,34 @@
 const EventEmitter = require('events');
 
+const asyncMap = require('async/map');
+const {decodeChanId} = require('bolt07');
+const {getChannel} = require('ln-service');
 const {getWalletInfo} = require('ln-service');
 const {subscribeToBlocks} = require('ln-service');
 const {subscribeToForwardRequests} = require('ln-service');
 const {subscribeToForwards} = require('ln-service');
 
 const htlcId = n => [n.in_channel, n.in_payment, n.out_channel, n.out_payment];
+const {isArray} = Array;
 const {keys} = Object;
+const max = arr => Math.max(...arr);
 const noHtlcsAllowed = 0;
 const secondsAgoDate = n => new Date(Date.now() - (1000 * n)).toISOString();
 const secondsPerHour = 60 * 60;
 
 /** Enforce forward request rules
 
+  Defining `only_allow` will setup an exclusive allowed list of peers or pairs
+
   {
     lnd: <Authenticated LND API Object>
     [max_new_pending_per_hour]: <Max Per Hour New Pending Forwards Number>
     [max_seconds_since_last_block]: <Max Seconds Since Last New Block Number>
+    [min_activation_age]: <Minimum Confirmed Blocks For Routing Channel Number>
+    [only_allow]: [{
+      inbound_peer: <Only Allow Inbound Peer Public Key Hex String>
+      outbound_peer: <Only Allow Outbound Peer Public Key Hex String>
+    }]
   }
 
   @event 'rejected'
@@ -30,13 +42,23 @@ const secondsPerHour = 60 * 60;
   <Forward Request Enforcement EventEmitter Object>
 */
 module.exports = args => {
+  if (!!args.only_allow && !isArray(args.only_allow)) {
+    throw new Error('ExpectedArrayOfOnlyAllowPairs');
+  }
+
+  if (!!args.only_allow && !args.only_allow.length) {
+    throw new Error('ExpectedOnlyAllowPairsToEnforceForwardRequestRules');
+  }
+
   if (!args.lnd) {
     throw new Error('ExpectedLndToEnforceForwardRequestRules');
   }
 
   const chain = {};
+  const channelKeys = {};
   const emitter = new EventEmitter();
   const htlcs = {};
+  const isChain = args.max_seconds_since_last_block || args.min_activation_age;
   const subs = [];
 
   // When nothing is listening to the events, stop listening to forward reqs
@@ -58,12 +80,14 @@ module.exports = args => {
     return emitter.emit('error', err);
   };
 
-  // Keep track of block timing when there is a block timing constraint
-  if (!!args.max_seconds_since_last_block) {
+  // Keep track of blocks when there is a blockchain constraint
+  if (!!isChain) {
     const subBlocks = subscribeToBlocks({lnd: args.lnd});
 
     // Update the latest block time every block
-    subBlocks.on('block', async () => {
+    subBlocks.on('block', async ({height}) => {
+      chain.current_block_height = height;
+
       // Skip updating the latest block on the first block notification
       if (!chain.latest_block_at) {
         try {
@@ -136,17 +160,59 @@ module.exports = args => {
       return request.reject();
     };
 
-    // If enforcing max time since last block, make sure this time is present
-    if (!!args.max_seconds_since_last_block && !chain.latest_block_at) {
+    // When enforcing chain based rules make sure chain info is present
+    if (!!isChain && !chain.latest_block_at) {
       try {
         const walletInfo = await getWalletInfo({lnd: args.lnd});
 
+        chain.current_block_height = walletInfo.current_block_height;
         chain.latest_block_at = walletInfo.latest_block_at;
       } catch (err) {
         // Make sure to resolve the HTLC before quitting
-        reject('FailedToGetWalletInfoForMaxSecondsRule');
+        reject('FailedToGetWalletInfoForChainConstraints');
 
-        return emitError([503, 'FailedToGetWalletInfoForMaxSecondsRule']);
+        return emitError([503, 'FailedToGetWalletInfoForChainConstraints']);
+      }
+    }
+
+    // Make sure that only explicitly specified edges allow routing
+    if (!!isArray(args.only_allow)) {
+      const edges = [request.in_channel, request.out_channel];
+
+      try {
+        const [inKeys, outKeys] = await asyncMap(edges, async (id) => {
+          // Exit early when the channel keys are cached
+          if (!!channelKeys[id]) {
+            return channelKeys[id];
+          }
+
+          const {policies} = await getChannel({id, lnd: args.lnd});
+
+          const keys = policies.map(n => n.public_key);
+
+          // Cache the associated keys with this channel id
+          channelKeys[id] = keys
+
+          return keys;
+        });
+
+        const [inKey1, inKey2] = inKeys;
+        const [outKey1, outKey2] = outKeys;
+
+        const inKey = !outKeys.includes(inKey1) ? inKey1 : inKey2;
+        const outKey = inKeys.includes(outKey1) ? outKey2 : outKey1;
+
+        // Look for this pairing in the allow list
+        const isAllowed = !!args.only_allow.find(rule => {
+          return rule.inbound_peer === inKey && rule.outbound_peer === outKey;
+        });
+
+        // Block the forward when not explicitly allowed
+        if (!isAllowed) {
+          return reject('RoutingPairNotDeclaredInOnlyAllowList');
+        }
+      } catch (err) {
+        return reject('FailedToFindChannelDetailsForReferencedChannel');
       }
     }
 
@@ -173,6 +239,22 @@ module.exports = args => {
 
       if (pendingCount >= args.max_new_pending_per_hour) {
         return reject('TooManyNewPendingHtlcsInThePastHour');
+      }
+    }
+
+    // Enforce minimum activation blocks constraint
+    if (!!args.min_activation_age) {
+      // Forwards must be confirmed before at least this block to be accepted
+      const maxHeight = chain.current_block_height - args.min_activation_age;
+
+      // Convert the channel ids into funding outpoint confirmation heights
+      const heights = [request.in_channel, request.out_channel].map(id => {
+        return decodeChanId({channel: id}).block_height;
+      });
+
+      // Reject HTLCs when a channel involved is too new
+      if (max(heights) > maxHeight) {
+        return reject('WaitingForChannelConfirmationActivation');
       }
     }
 
