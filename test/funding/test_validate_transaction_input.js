@@ -1,4 +1,5 @@
 const {test} = require('@alexbosworth/tap');
+const tinysecp = require('tiny-secp256k1');
 
 const method = require('./../../funding/validate_transaction_input');
 
@@ -78,7 +79,11 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, ({end, strictSame, throws}) => {
+  return test(description, async ({end, strictSame, throws}) => {
+    const ecp = (await import('ecpair')).ECPairFactory(tinysecp);
+
+    args.ecp = ecp;
+
     if (!!error) {
       throws(() => method(args), new Error(error), 'Error returned');
 

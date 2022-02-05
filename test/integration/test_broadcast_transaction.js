@@ -7,6 +7,7 @@ const {fundPsbt} = require('ln-service');
 const {signPsbt} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
 const {test} = require('@alexbosworth/tap');
+const tinysecp = require('tiny-secp256k1');
 
 const {broadcastTransaction} = require('./../../');
 
@@ -19,6 +20,8 @@ const tokens = 1e6;
 return test('Transaction is broadcast', async ({end, fail, strictSame}) => {
   const [{generate, kill, lnd}] = (await spawnLightningCluster({})).nodes;
 
+  const ecp = (await import('ecpair')).ECPairFactory(tinysecp);
+
   // Make funds for the node
   await generate({count: maturity});
 
@@ -30,7 +33,7 @@ return test('Transaction is broadcast', async ({end, fail, strictSame}) => {
       psbt: (await fundPsbt({lnd, outputs: [{address, tokens}]})).psbt,
     });
 
-    const {transaction} = extractTransaction({psbt});
+    const {transaction} = extractTransaction({ecp, psbt});
 
     // Broadcast the transaction into a block while mining
     const {mine} = await asyncAuto({

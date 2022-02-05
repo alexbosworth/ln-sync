@@ -14,16 +14,17 @@ const hasScript = (output, script) => output.script.equals(script);
 const hexAsBuffer = hex => Buffer.from(hex, 'hex');
 const isBase64 = input => isBase64Encoded({input}).is_base64;
 const isHex = n => !(n.length % 2) && /^[0-9A-F]*$/i.test(n);
-const isPsbt = input => isPsbtEncoded({input}).is_psbt;
+const isPsbt = (input, ecp) => isPsbtEncoded({ecp, input}).is_psbt;
 const isTx = input => isEncodedTransaction({input}).is_transaction;
 const notFoundIndex = -1;
 const txFromHex = hex => Transaction.fromHex(hex);
-const txFromPsbt = psbt => decodePsbt({psbt}).unsigned_transaction;
+const txFromPsbt = (psbt, ecp) => decodePsbt({ecp, psbt}).unsigned_transaction;
 const txIdHexLength = 64;
 
 /** Validate that an external transaction is in an acceptable format
 
   {
+    ecp: <ECPair Object>
     input: <External Transaction Data Input String>
     outputs: [{
       address: <Expected Output Address String>s
@@ -36,7 +37,7 @@ const txIdHexLength = 64;
     valid: <Error Message String Or Is Valid Boolean>
   }
 */
-module.exports = ({input, outputs}) => {
+module.exports = ({ecp, input, outputs}) => {
   // Exit early on no input to return a deliberate error
   if (!input) {
     return {valid: true};
@@ -59,7 +60,7 @@ module.exports = ({input, outputs}) => {
 
   const hex = isValidHex ? funding : base64AsHex(funding);
 
-  const isValidPsbt = isPsbt(hex);
+  const isValidPsbt = isPsbt(hex, ecp);
   const isValidTx = isTx(hex);
 
   // Exit early when the data doesn't look like a TX or a PSBT
@@ -68,7 +69,7 @@ module.exports = ({input, outputs}) => {
   }
 
   // Parse the transaction outputs out of the data
-  const {outs} = isValidTx ? txFromHex(hex) : txFromHex(txFromPsbt(hex));
+  const {outs} = isValidTx ? txFromHex(hex) : txFromHex(txFromPsbt(hex, ecp));
 
   // Map the output addresses to scripts to allow for easier out script search
   const outputsWithScripts = outputs.map(({address, tokens}) => {
