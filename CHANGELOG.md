@@ -1,6 +1,6 @@
 # Versions
 
-## 3.9.0
+## 3.9.1
 
 - `enforceForwardRequestRules`: Add `min_activation_age` for age constraint
 - `enforceForwardRequestRules`: Add `only_allow` for edge constraints
