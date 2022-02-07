@@ -21,6 +21,7 @@ const {getTransitRefund} = require('./funding');
 const {maintainUtxoLocks} = require('./funding');
 const {reserveTransitFunds} = require('./funding');
 const {stopAllHtlcs} = require('./peers');
+const {subscribeToPendingChannels} = require('./monitor');
 const {updateChannelFee} = require('./peers');
 const {waitForPendingOpen} = require('./peers');
 
@@ -48,6 +49,7 @@ module.exports = {
   maintainUtxoLocks,
   reserveTransitFunds,
   stopAllHtlcs,
+  subscribeToPendingChannels,
   updateChannelFee,
   waitForPendingOpen,
 };

@@ -1,5 +1,9 @@
 # Versions
 
+## 3.10.0
+
+- `subscribeToPendingChannels`: Add method to poll for opening/closing channels
+
 ## 3.9.3
 
 - `enforceForwardRequestRules`: Add `min_activation_age` for age constraint
