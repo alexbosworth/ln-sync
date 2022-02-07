@@ -40,5 +40,5 @@
     "integration-tests": "tap --branches=1 --functions=1 --lines=1 --statements=1 test/integration/*.js",
     "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 -t 90 test/chain/*.js test/display/*.js test/funding/*.js test/graph/*.js test/peers/*.js"
   },
-  "version": "3.9.3"
+  "version": "3.10.0"
 }
