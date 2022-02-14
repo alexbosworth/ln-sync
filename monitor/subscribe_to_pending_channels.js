@@ -18,12 +18,14 @@ const sumOf = arr => arr.reduce((sum, n) => sum + n, Number());
   @return
   <EventEmitter Object>
 
-  @event 'closing
+  @event 'closing'
   {
     channels: [{
       capacity: <Channel Capacity Tokens Number>
       is_partner_initiated: <Channel Partner Initiated Channel Bool>
       partner_public_key: <Channel Peer Public Key String>
+      transaction_id: <Channel Funding Transaction Id Hex String>
+      transaction_vout: <Channel Funding Transaction Output Index Number>
     }]
   }
 
@@ -33,6 +35,8 @@ const sumOf = arr => arr.reduce((sum, n) => sum + n, Number());
       capacity: <Channel Capacity Tokens Number>
       is_partner_initiated: <Channel Partner Initiated Channel Bool>
       partner_public_key: <Channel Peer Public Key String>
+      transaction_id: <Channel Funding Transaction Id Hex String>
+      transaction_vout: <Channel Funding Transaction Output Index Number>
     }]
   }
 */

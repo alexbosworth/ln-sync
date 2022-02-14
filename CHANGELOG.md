@@ -1,6 +1,6 @@
 # Versions
 
-## 3.10.0
+## 3.10.1
 
 - `subscribeToPendingChannels`: Add method to poll for opening/closing channels
 
