@@ -23,6 +23,7 @@ const {reserveTransitFunds} = require('./funding');
 const {stopAllHtlcs} = require('./peers');
 const {subscribeToPendingChannels} = require('./monitor');
 const {updateChannelFee} = require('./peers');
+const {waitForConnectedPeer} = require('./peers');
 const {waitForPendingOpen} = require('./peers');
 
 module.exports = {
@@ -51,5 +52,6 @@ module.exports = {
   stopAllHtlcs,
   subscribeToPendingChannels,
   updateChannelFee,
+  waitForConnectedPeer,
   waitForPendingOpen,
 };

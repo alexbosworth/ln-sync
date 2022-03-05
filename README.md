@@ -633,6 +633,18 @@ Update the fee for an individual channel
 
     @returns via cbk or Promise
 
+### `waitForConnectedPeer`
+
+Wait for a peer to connect
+
+    {
+      id: <Node Identity Public Key Hex String>
+      lnd: <Authenticated LND API Object>
+      [timeout]: <Timeout Milliseconds Number>
+    }
+
+    @returns via cbk or Promise
+
 ### `waitForPendingOpen`
 
 Wait for an incoming pending open channel matching specific criteria

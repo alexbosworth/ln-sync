@@ -1,5 +1,9 @@
 # Versions
 
+## 3.11.0
+
+- `waitForConnectedPeer`: Add method to wait for a peer to connect
+
 ## 3.10.1
 
 - `subscribeToPendingChannels`: Add method to poll for opening/closing channels

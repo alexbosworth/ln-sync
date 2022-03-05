@@ -5,6 +5,7 @@ const getLiquidity = require('./get_liquidity');
 const getPeerLiquidity = require('./get_peer_liquidity');
 const stopAllHtlcs = require('./stop_all_htlcs');
 const updateChannelFee = require('./update_channel_fee');
+const waitForConnectedPeer = require('./wait_for_connected_peer');
 const waitForPendingOpen = require('./wait_for_pending_open');
 
 module.exports = {
@@ -15,5 +16,6 @@ module.exports = {
   getPeerLiquidity,
   stopAllHtlcs,
   updateChannelFee,
+  waitForConnectedPeer,
   waitForPendingOpen,
 };
