@@ -56,7 +56,7 @@ return test('Subscribe to pending chans', async ({end, fail, strictSame}) => {
       }
     });
   } catch (err) {
-    equal(err, null, 'Expected no error');
+    strictSame(err, null, 'Expected no error');
   }
 
   await kill({});

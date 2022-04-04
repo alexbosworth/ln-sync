@@ -66,6 +66,27 @@ Connect a peer
 
     @returns via cbk or Promise
 
+### `findConfirmedOutput`
+
+Find a confirmed on-chain output
+
+    {
+      lnd: <Authenticated LND API Object>
+      [min_confirmations]: <Minimum Confirmations Count Number>
+      output_script: <Chain Output Script Hex String>
+      start_height: <Start Chain Height Number>
+      timeout_ms: <Timeout Milliseconds Number>
+      tokens: <Tokens Sent To Script Number>
+    }
+
+    @returns via cbk or Promise
+    {
+      confirmation_height: <Transaction Confirmed At Height Number>
+      is_coinbase: <Transaction is Coinbase Transaction Bool>
+      transaction_id: <Transaction Id Hex String>
+      transaction_vout: <Transaction Output Index Number>
+    }
+
 ### `findKey`
 
 Find a public key given a query

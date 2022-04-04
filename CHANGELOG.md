@@ -1,5 +1,9 @@
 # Versions
 
+## 3.12.0
+
+- `findConfirmedOutput`: Add method to find a confirmed output
+
 ## 3.11.1
 
 - `waitForConnectedPeer`: Add method to wait for a peer to connect
