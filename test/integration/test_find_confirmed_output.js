@@ -31,13 +31,15 @@ test('Find confirmed output', async ({end, fail, strictSame}) => {
     const [utxo] = utxos.reverse();
 
     // Find a coinbase output
-    const confirmed = await findConfirmedOutput({
-      lnd,
-      min_confirmations: 1,
-      output_script: utxo.output_script,
-      start_height: 1,
-      timeout_ms: 1000 * 10,
-      tokens: 2500000000,
+    const confirmed = await asyncRetry({interval, times}, async () => {
+      return await findConfirmedOutput({
+        lnd,
+        min_confirmations: 1,
+        output_script: utxo.output_script,
+        start_height: 1,
+        timeout_ms: 1000 * 10,
+        tokens: 2500000000,
+      });
     });
 
     strictSame(confirmed.is_coinbase, true, 'Found coinbase output');
