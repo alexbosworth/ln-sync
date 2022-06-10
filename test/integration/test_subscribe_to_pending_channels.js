@@ -30,11 +30,13 @@ return test('Subscribe to pending chans', async ({end, fail, strictSame}) => {
 
     await generate({count});
 
-    const channel = await openChannel({
-      lnd,
-      local_tokens: capacity,
-      partner_public_key: target.id,
-      partner_socket: target.socket,
+    const channel = await asyncRetry({interval, times}, async () => {
+      return await openChannel({
+        lnd,
+        local_tokens: capacity,
+        partner_public_key: target.id,
+        partner_socket: target.socket,
+      });
     });
 
     await asyncRetry({interval, times}, async () => {

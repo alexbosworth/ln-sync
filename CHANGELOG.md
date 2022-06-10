@@ -1,6 +1,6 @@
 # Versions
 
-## 3.12.1
+## 3.12.2
 
 - `findConfirmedOutput`: Add method to find a confirmed output
 
