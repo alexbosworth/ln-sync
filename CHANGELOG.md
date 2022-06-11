@@ -1,5 +1,9 @@
 # Versions
 
+## 3.13.0
+
+- `fundPsbtDisallowingInputs`: Add method to fund a PSBT without some UTXOs
+
 ## 3.12.2
 
 - `findConfirmedOutput`: Add method to find a confirmed output

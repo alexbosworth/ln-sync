@@ -6,6 +6,7 @@ const {enforceForwardRequestRules} = require('./monitor');
 const {findConfirmedOutput} = require('./chain');
 const {findKey} = require('./peers');
 const {formatTokens} = require('./display');
+const {fundPsbtDisallowingInputs} = require('./funding');
 const {getAllInvoices} = require('./transactions');
 const {getFundedTransaction} = require('./funding');
 const {getLiquidity} = require('./peers');
@@ -36,6 +37,7 @@ module.exports = {
   findConfirmedOutput,
   findKey,
   formatTokens,
+  fundPsbtDisallowingInputs,
   getAllInvoices,
   getFundedTransaction,
   getLiquidity,
