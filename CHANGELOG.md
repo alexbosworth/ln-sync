@@ -1,5 +1,9 @@
 # Versions
 
+## 3.13.1
+
+- Add support for node.js 18+
+
 ## 3.13.0
 
 - `fundPsbtDisallowingInputs`: Add method to fund a PSBT without some UTXOs
