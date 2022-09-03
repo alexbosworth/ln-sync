@@ -49,6 +49,7 @@ module.exports = (args, cbk) => {
             cooperative_close_address: args.cooperative_close_address,
             give_tokens: args.give_tokens,
             is_private: args.is_private,
+            is_trusted_funding: args.is_trusted_funding,
             min_htlc_mtokens: args.min_htlc_mtokens,
             partner_csv_delay: args.partner_csv_delay,
             partner_public_key: args.partner_public_key,
