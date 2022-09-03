@@ -1,5 +1,9 @@
 # Versions
 
+## 3.14.0
+
+- `acceptsChannelOpen`: Add support for `is_trusted_funding`
+
 ## 3.13.1
 
 - Add support for node.js 18+
