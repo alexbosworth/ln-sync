@@ -10,6 +10,7 @@ const {returnResult} = require('asyncjs-util');
     [cooperative_close_address]: <Restrict Coop Close To Address String>
     [give_tokens]: <Tokens to Gift To Partner Number> // Defaults to zero
     [is_private]: <Channel is Private Bool> // Defaults to false
+    [is_trusted_funding]: <Peer Should Avoid Waiting For Confirmation Bool>
     lnd: <Authenticated LND API Object>
     [min_htlc_mtokens]: <Minimum HTLC Millitokens String>
     [partner_csv_delay]: <Peer Output CSV Delay Number>

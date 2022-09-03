@@ -26,6 +26,7 @@ const makeArgs = overrides => {
       block_height: 1,
       dest_addresses: ['address'],
       num_confirmations: 1,
+      previous_outpoints: [],
       time_stamp: '1',
       total_fees: '1',
       tx_hash: Buffer.alloc(32).toString('hex'),

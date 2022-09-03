@@ -18,6 +18,7 @@ const makeLnd = overrides => {
         return cbk(null, {
           channels: [{
             active: true,
+            alias_scids: [],
             capacity: '1',
             chan_id: '1',
             chan_status_flags: '1',

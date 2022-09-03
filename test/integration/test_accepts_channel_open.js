@@ -44,6 +44,21 @@ return test('Check if peer accepts open', async ({end, fail, strictSame}) => {
 
     strictSame(shouldAccept, {is_accepted: true}, 'Node accepts a channel');
 
+    try {
+      await acceptsChannelOpen({
+        capacity,
+        lnd,
+        give_tokens: capacity / [lnd, target].length,
+        is_private: true,
+        is_trusted_funding: true,
+        partner_public_key: target.id,
+      });
+    } catch (error) {
+      const [,, {err}] = error;
+
+      strictSame(err.details, 'requested channel type not supported', 'Fail');
+    }
+
     const sub = subscribeToOpenRequests({lnd: target.lnd});
 
     // Reject the upcoming channel request on the target
