@@ -26,41 +26,45 @@ tests.forEach(({args, description, error, expected}) => {
 
     const [{generate, id, kill, lnd}] = nodes;
 
-    // Get a funding address
-    const {address} = await createChainAddress({lnd, format: 'p2wpkh'});
+    try {
+      // Get a funding address
+      const {address} = await createChainAddress({lnd, format: 'p2wpkh'});
 
-    // Make some coins
-    await generate({address, count: maturityBlocks});
+      // Make some coins
+      await generate({address, count: maturityBlocks});
 
-    // Wait for balance to appear
-    const utxo = await asyncRetry({interval, times}, async () => {
-      const {utxos} = await getUtxos({lnd});
+      // Wait for balance to appear
+      const utxo = await asyncRetry({interval, times}, async () => {
+        const {utxos} = await getUtxos({lnd});
 
-      const [utxo] = utxos;
+        const [utxo] = utxos;
 
-      if (!utxo) {
-        throw new Error('ExpectedUtxoFromGeneration');
-      }
+        if (!utxo) {
+          throw new Error('ExpectedUtxoFromGeneration');
+        }
 
-      return utxo;
-    });
+        return utxo;
+      });
 
-    const maximum = await getMaxFundAmount({
-      lnd,
-      addresses: [address],
-      fee_tokens_per_vbyte: feeTokensPerVbyte,
-      inputs: [{
-        tokens: utxo.tokens,
-        transaction_id: utxo.transaction_id,
-        transaction_vout: utxo.transaction_vout,
-      }],
-    });
+      const maximum = await getMaxFundAmount({
+        lnd,
+        addresses: [address],
+        fee_tokens_per_vbyte: feeTokensPerVbyte,
+        inputs: [{
+          tokens: utxo.tokens,
+          transaction_id: utxo.transaction_id,
+          transaction_vout: utxo.transaction_vout,
+        }],
+      });
 
-    strictSame(
-      maximum,
-      {fee_tokens_per_vbyte: 3, max_tokens: 4999999577},
-      'Maximum funding for inputs is returned'
-    );
+      strictSame(
+        maximum,
+        {fee_tokens_per_vbyte: 3, max_tokens: 4999999577},
+        'Maximum funding for inputs is returned'
+      );
+    } catch (err) {
+      strictSame(err, null, 'Expected no error');
+    }
 
     await kill({});
 

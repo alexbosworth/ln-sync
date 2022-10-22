@@ -1,11 +1,13 @@
 const asyncAuto = require('async/auto');
 const asyncEach = require('async/each');
+const asyncReflect = require('async/reflect');
 const {fundPsbt} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 const {signPsbt} = require('ln-service');
 const {Transaction} = require('bitcoinjs-lib');
 const {unlockUtxo} = require('ln-service');
 
+const adjustedDust = 546 - 30;
 const dust = 546;
 const {fromHex} = Transaction;
 const {isArray} = Array;
@@ -82,11 +84,11 @@ module.exports = (args, cbk) => {
         cbk);
       }],
 
-      // Confirm that the PSBT can be created with the maximal amount
-      createMaximum: [
+      // Confirm that the PSBT can be created with the maximal amount normally
+      createMaximumNormal: [
         'createTemplate',
         'unlockTemplate',
-        ({createTemplate}, cbk) =>
+        asyncReflect(({createTemplate}, cbk) =>
       {
         // LND as of 0.13.3 sets its max funding value as a sum of all outputs
         const max = sumOf(createTemplate.outputs.map(n => n.tokens));
@@ -108,6 +110,39 @@ module.exports = (args, cbk) => {
           outputs: args.addresses.map((address, i) => ({
             address,
             tokens: !i ? dust + max - baseline : dust,
+          })),
+        },
+        cbk);
+      })],
+
+      // Make sure that maximum spend is created, or use adjusted dust value
+      createMaximum: [
+        'createMaximumNormal',
+        'createTemplate',
+        'unlockTemplate',
+        ({createMaximumNormal, createTemplate}, cbk) =>
+      {
+        // Exit early when creating a maximum spend worked as is
+        if (!!createMaximumNormal.value) {
+          return cbk(null, createMaximumNormal);
+        }
+
+        // Repeat calculations for the spend
+        const max = sumOf(createTemplate.outputs.map(n => n.tokens));
+        const outs = createTemplate.outputs.filter(n => !n.is_change);
+        const baseline = sumOf(outs.map(n => n.tokens));
+
+        // In LND 0.15.3 spending P2TR outputs requires adjusted dust value
+        return fundPsbt({
+          fee_tokens_per_vbyte: args.fee_tokens_per_vbyte,
+          inputs: args.inputs.map(input => ({
+            transaction_id: input.transaction_id,
+            transaction_vout: input.transaction_vout,
+          })),
+          lnd: args.lnd,
+          outputs: args.addresses.map((address, i) => ({
+            address,
+            tokens: !i ? adjustedDust + max - baseline : dust,
           })),
         },
         cbk);

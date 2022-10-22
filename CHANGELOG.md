@@ -1,5 +1,9 @@
 # Versions
 
+## 4.0.2
+
+- `getMaxFundAmount`: Fix support for finding the max P2TR spend on LND 0.15.3
+
 ## 4.0.1
 
 - End support for Node.js 12, require Node.js 14 or higher
