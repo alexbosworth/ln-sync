@@ -1,5 +1,9 @@
 # Versions
 
+## 4.0.0
+
+- End support for Node.js 12, require Node.js 14 or higher
+
 ## 3.14.0
 
 - `acceptsChannelOpen`: Add support for `is_trusted_funding`
