@@ -1,6 +1,6 @@
 # Versions
 
-## 4.0.0
+## 4.0.1
 
 - End support for Node.js 12, require Node.js 14 or higher
 
