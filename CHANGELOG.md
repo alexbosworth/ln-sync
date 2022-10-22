@@ -1,6 +1,6 @@
 # Versions
 
-## 4.0.2
+## 4.0.3
 
 - `getMaxFundAmount`: Fix support for finding the max P2TR spend on LND 0.15.3
 

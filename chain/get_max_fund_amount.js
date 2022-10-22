@@ -7,7 +7,7 @@ const {signPsbt} = require('ln-service');
 const {Transaction} = require('bitcoinjs-lib');
 const {unlockUtxo} = require('ln-service');
 
-const adjustedDust = 546 - 30;
+const adjustFactor = 10;
 const dust = 546;
 const {fromHex} = Transaction;
 const {isArray} = Array;
@@ -128,6 +128,7 @@ module.exports = (args, cbk) => {
         }
 
         // Repeat calculations for the spend
+        const adjustment = args.fee_tokens_per_vbyte * adjustFactor;
         const max = sumOf(createTemplate.outputs.map(n => n.tokens));
         const outs = createTemplate.outputs.filter(n => !n.is_change);
         const baseline = sumOf(outs.map(n => n.tokens));
@@ -142,7 +143,7 @@ module.exports = (args, cbk) => {
           lnd: args.lnd,
           outputs: args.addresses.map((address, i) => ({
             address,
-            tokens: !i ? adjustedDust + max - baseline : dust,
+            tokens: !i ? dust + max - baseline - adjustment : dust,
           })),
         },
         cbk);
