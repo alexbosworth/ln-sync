@@ -8,6 +8,7 @@ const {Transaction} = require('bitcoinjs-lib');
 const {unlockUtxo} = require('ln-service');
 
 const adjustFactor = 10;
+const {ceil} = Math;
 const dust = 546;
 const {fromHex} = Transaction;
 const {isArray} = Array;
@@ -128,7 +129,7 @@ module.exports = (args, cbk) => {
         }
 
         // Repeat calculations for the spend
-        const adjustment = args.fee_tokens_per_vbyte * adjustFactor;
+        const adjustment = ceil(args.fee_tokens_per_vbyte * adjustFactor);
         const max = sumOf(createTemplate.outputs.map(n => n.tokens));
         const outs = createTemplate.outputs.filter(n => !n.is_change);
         const baseline = sumOf(outs.map(n => n.tokens));
