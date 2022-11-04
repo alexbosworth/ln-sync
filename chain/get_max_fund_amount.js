@@ -125,7 +125,7 @@ module.exports = (args, cbk) => {
       {
         // Exit early when creating a maximum spend worked as is
         if (!!createMaximumNormal.value) {
-          return cbk(null, createMaximumNormal);
+          return cbk(null, createMaximumNormal.value);
         }
 
         // Repeat calculations for the spend

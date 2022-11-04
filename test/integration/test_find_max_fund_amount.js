@@ -1,6 +1,7 @@
 const asyncRetry = require('async/retry');
 const {createChainAddress} = require('ln-service');
 const {getChainBalance} = require('ln-service');
+const {getLockedUtxos} = require('ln-service');
 const {getUtxos} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
 const {test} = require('@alexbosworth/tap');
@@ -61,6 +62,12 @@ tests.forEach(({args, description, error, expected}) => {
         maximum,
         {fee_tokens_per_vbyte: 3, max_tokens: 4999999577},
         'Maximum funding for inputs is returned'
+      );
+
+      strictSame(
+        await getLockedUtxos({lnd}),
+        {utxos: []},
+        'UTXOs all get unlocked'
       );
     } catch (err) {
       strictSame(err, null, 'Expected no error');
