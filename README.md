@@ -254,6 +254,28 @@ Get the alias of a node, ignoring errors
       id: <Node Identity Public Key Hex String>
     }
 
+### `getNodeFunds`
+
+Get a detailed balance that categorizes balance of tokens on the node
+
+    {
+      [is_confirmed]: <Only Consider Confirmed Transactions Bool>
+      lnd: <Authenticated LND API Object>
+    }
+
+    @returns via cbk or Promise
+    {
+      [closing_balance]: <Total Coins Closing Tokens Number>
+      [conflicted_pending]: <Conflicted Transaction Tokens Number>
+      [invalid_pending]: <Invalid Pending Tokens Tokens Number>
+      [offchain_balance]: <Channel Tokens Balance Tokens Number>
+      [offchain_pending]: <Pending Channel Tokens Balance Tokens Number>
+      [onchain_confirmed]: <Confirmed On Chain Balance Tokens Number>
+      [onchain_pending]: <Pending Chain Tokens Balance Tokens Number>
+      [onchain_vbytes]: <UTXO Footprint Virtual Bytes Number>
+      [utxos_count]: <Total UTXOs Count Number>
+    }
+
 ### `getMaxFundAmount`
 
 Find the max amount that can be used for funding outputs given inputs
