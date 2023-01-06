@@ -6,19 +6,19 @@
   "description": "LN metadata persistence methods",
   "dependencies": {
     "async": "3.2.4",
-    "asyncjs-util": "1.2.10",
+    "asyncjs-util": "1.2.11",
     "bech32": "2.0.0",
     "bitcoinjs-lib": "6.1.0",
-    "bolt07": "1.8.2",
+    "bolt07": "1.8.3",
     "colorette": "2.0.19",
     "ecpair": "2.1.0",
-    "ln-service": "54.8.0",
-    "psbt": "2.7.1",
+    "ln-service": "54.9.0",
+    "psbt": "2.7.2",
     "tiny-secp256k1": "2.2.1"
   },
   "devDependencies": {
-    "@alexbosworth/tap": "15.0.11",
-    "ln-docker-daemons": "4.0.2",
+    "@alexbosworth/tap": "15.0.12",
+    "ln-docker-daemons": "4.0.4",
     "mock-lnd": "1.4.4"
   },
   "engines": {
@@ -40,5 +40,5 @@
     "integration-tests": "tap -j 2 --branches=1 --functions=1 --lines=1 --statements=1 test/integration/*.js",
     "test": "tap --branches=1 --functions=1 --lines=1 --statements=1 -t 120 test/chain/*.js test/display/*.js test/funding/*.js test/graph/*.js test/nodes/*.js test/peers/*.js"
   },
-  "version": "4.1.0"
+  "version": "4.1.1"
 }

@@ -1,6 +1,6 @@
 # Versions
 
-## 4.1.0
+## 4.1.1
 
 - `getNodeFunds`: Add method to return wallet balance sums for a node
 
