@@ -1,5 +1,9 @@
 # Versions
 
+## 4.2.0
+
+- `getNodeFunds`: update `onchain_vbytes` to support P2TR UTXOs
+
 ## 4.1.1
 
 - `getNodeFunds`: Add method to return wallet balance sums for a node

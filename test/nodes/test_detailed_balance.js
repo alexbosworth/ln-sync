@@ -88,6 +88,12 @@ const tests = [
           confirmation_count: 0,
           tokens: 2,
         },
+        {
+          address: 'address3',
+          address_format: 'p2tr',
+          confirmation_count: 1,
+          tokens: 3,
+        },
       ],
     },
     description: 'Balance totals are calculated',
@@ -97,8 +103,8 @@ const tests = [
       invalid_pending: 0,
       offchain_balance: 14,
       offchain_pending: 35,
-      onchain_balance: 4,
-      onchain_vbytes: 211,
+      onchain_balance: 7,
+      onchain_vbytes: 268,
     },
   },
   {

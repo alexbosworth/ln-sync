@@ -1,5 +1,6 @@
 const conflictingBalances = require('./conflicting_balances');
 
+const addressTypePayToTaproot = 'p2tr';
 const {ceil} = Math;
 const flatten = arr => [].concat(...arr);
 const inputsCounterVBytesLength = 3;
@@ -10,6 +11,7 @@ const outputCounterVBytesLength = 1;
 const outputValueVBytesLength = 8;
 const outputScriptCounterVBytesLength = 1;
 const outputScriptVBytesLength = 34;
+const schnorrSignatureVByteLength = 16;
 const sumOf = arr => arr.reduce((sum, n) => sum + n, Number());
 const transactionIdVByteLength = 32;
 const transactionLockTimeVBytesLength = 4;
@@ -136,17 +138,24 @@ module.exports = ({channels, locked, pending, transactions, utxos}) => {
         .concat(transactionOutputIndexVByteLength) // Previous tx out index
         .concat(inputSequenceVByteLength) // Input sequence number
         .concat(witnessElementsCounterVByteLength) // Witness elements count
-        .concat(witnessSizeCounterVByteLength) // Witness sig size counter
-        .concat(witnessSignatureVByteLength) // Witness signature
+        .concat(witnessSizeCounterVByteLength); // Witness sig size counter
+
+      // Exit early when the UTXO uses P2TR and only needs a signature push
+      if (utxo.address_format === addressTypePayToTaproot) {
+        return inputData.concat(schnorrSignatureVByteLength);
+      }
+
+      const inputV0Data = inputData
+        .concat(witnessSignatureVByteLength) // ECDSA witness signature
         .concat(witnessPublicKeySizeVByteLength) // Public key size counter
         .concat(witnessPublicKeyVByteLength); // Witness public key
 
       // Exit early with nested data
       if (utxo.address_format === nestedPublicKeyAddressType) {
-        return inputData.concat(nestedPublicKeyVByteLength);
+        return inputV0Data.concat(nestedPublicKeyVByteLength);
       }
 
-      return inputData;
+      return inputV0Data;
     }));
 
   // Total balance to consider owned in channels
