@@ -19,6 +19,7 @@ const secondsPerHour = 60 * 60;
 /** Enforce forward request rules
 
   Defining `only_allow` will setup an exclusive allowed list of peers or pairs
+  Defining `only_disallow` will setup an exclusive ban list of peers or pairs
 
   {
     lnd: <Authenticated LND API Object>
@@ -29,6 +30,10 @@ const secondsPerHour = 60 * 60;
       inbound_peer: <Only Allow Inbound Peer Public Key Hex String>
       outbound_peer: <Only Allow Outbound Peer Public Key Hex String>
     }]
+    [only_disallow]: [{
+      inbound_peer: <Only Disallow Inbound Peer Public Key Hex String>
+      outbound_peer: <Only Disallow Outbound Peer Public Key Hex String>
+    }]    
   }
 
   @event 'rejected'
@@ -42,12 +47,24 @@ const secondsPerHour = 60 * 60;
   <Forward Request Enforcement EventEmitter Object>
 */
 module.exports = args => {
+  if (!!args.only_allow && !!args.only_disallow) {
+    throw new Error('ExpectedEitherAllowOrDisallowPairsToEnforceForwardRequestRules');
+  }
+
   if (!!args.only_allow && !isArray(args.only_allow)) {
     throw new Error('ExpectedArrayOfOnlyAllowPairs');
   }
 
+  if (!!args.only_disallow && !isArray(args.only_disallow)) {
+    throw new Error('ExpectedArrayOfOnlyDisallowPairs');
+  }
+
   if (!!args.only_allow && !args.only_allow.length) {
     throw new Error('ExpectedOnlyAllowPairsToEnforceForwardRequestRules');
+  }
+
+  if (!!args.only_disallow && !args.only_disallow.length) {
+    throw new Error('ExpectedOnlyDisallowPairsToEnforceForwardRequestRules');
   }
 
   if (!args.lnd) {
@@ -176,7 +193,7 @@ module.exports = args => {
     }
 
     // Make sure that only explicitly specified edges allow routing
-    if (!!isArray(args.only_allow)) {
+    if (!!isArray(args.only_allow) || !!isArray(args.only_disallow)) {
       const edges = [request.in_channel, request.out_channel];
 
       try {
@@ -202,14 +219,28 @@ module.exports = args => {
         const inKey = !outKeys.includes(inKey1) ? inKey1 : inKey2;
         const outKey = inKeys.includes(outKey1) ? outKey2 : outKey1;
 
-        // Look for this pairing in the allow list
-        const isAllowed = !!args.only_allow.find(rule => {
-          return rule.inbound_peer === inKey && rule.outbound_peer === outKey;
-        });
+        // Look for this pairing in the allow/disallow list
+        const isAllowed = () => {
+          if (!!isArray(args.only_allow)) {
+            const isAllowCheck = !!args.only_allow.find(rule => {
+              return rule.inbound_peer === inKey && rule.outbound_peer === outKey;
+            });
+
+            return isAllowCheck;
+          }
+
+          if (!!isArray(args.only_disallow)) {
+            const isAllowCheck = !!args.only_disallow.find(rule => {
+              return rule.inbound_peer === inKey && rule.outbound_peer === outKey;
+            });
+
+            return !isAllowCheck;
+          }
+        }
 
         // Block the forward when not explicitly allowed
-        if (!isAllowed) {
-          return reject('RoutingPairNotDeclaredInOnlyAllowList');
+        if (!isAllowed()) {
+          return reject('RoutingPairNotDeclaredInOnlyAllow/DisallowList');
         }
       } catch (err) {
         return reject('FailedToFindChannelDetailsForReferencedChannel');
