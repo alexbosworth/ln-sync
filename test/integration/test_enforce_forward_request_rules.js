@@ -406,6 +406,84 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
         });
       });
     }
+
+    // Deny list will prevent forwarding
+    {
+      // Start from a clean state
+      await deleteForwardingReputations({lnd});
+
+      // Make sure payments work normally
+      await asyncRetry({interval, times}, async () => {
+        await generate({});
+
+        await pay({
+          lnd,
+          request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+        });
+      });
+
+      // Stop payments from control to target
+      const sub = enforceForwardRequestRules({
+        lnd: target.lnd,
+        only_disallow: [{inbound_peer: id, outbound_peer: remote.id}],
+      });
+
+      const rejection = [];
+
+      sub.on('rejected', rejected => rejection.push(rejected));
+
+      // Payments are rejected when going from control to remote
+      try {
+        await pay({
+          lnd,
+          request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+        });
+
+        strictSame(payment, null, 'Expected that control to remote denied');
+      } catch (err) {
+        strictSame(
+          err,
+          [503, 'PaymentPathfindingFailedToFindPossibleRoute'],
+          'Control to remote payments denied'
+        );
+      }
+
+      // Payments from remote to control does work
+      try {
+        await asyncRetry({interval, times}, async () => {
+          await generate({});
+
+          await pay({
+            lnd: remote.lnd,
+            request: (await createInvoice({tokens, lnd})).request,
+          });
+        });
+      } catch (err) {
+        strictSame(err, null, 'Remote to control should not be denied');
+      }
+
+      // A rejection event was generated
+      const [rejected] = rejection;
+
+      strictSame(
+        rejected.reject_reason,
+        'RoutingPairSpecifiedInDenyForwardsList',
+        'Payments are limited by deny list'
+      );
+
+      sub.removeAllListeners();
+
+      // After paying the hold invoice, should be able to pay normally again
+      await deleteForwardingReputations({lnd});
+
+      // Make a payment to confirm things are back to normal
+      await asyncRetry({interval, times}, async () => {
+        await pay({
+          lnd,
+          request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+        });
+      });
+    }
   } catch (err) {
     strictSame(err, null, 'Expected no error');
   } finally {

@@ -19,7 +19,7 @@ const secondsPerHour = 60 * 60;
 /** Enforce forward request rules
 
   Defining `only_allow` will setup an exclusive allowed list of peers or pairs
-  Defining `only_disallow` will setup an exclusive ban list of peers or pairs
+  Defining `only_disallow` will setup a ban list of peers or pairs
 
   {
     lnd: <Authenticated LND API Object>
@@ -33,7 +33,7 @@ const secondsPerHour = 60 * 60;
     [only_disallow]: [{
       inbound_peer: <Only Disallow Inbound Peer Public Key Hex String>
       outbound_peer: <Only Disallow Outbound Peer Public Key Hex String>
-    }]    
+    }]
   }
 
   @event 'rejected'
@@ -48,7 +48,7 @@ const secondsPerHour = 60 * 60;
 */
 module.exports = args => {
   if (!!args.only_allow && !!args.only_disallow) {
-    throw new Error('ExpectedEitherAllowOrDisallowPairsToEnforceForwardRequestRules');
+    throw new Error('ExpectedEitherAllowOrDisallowPairsToEnforceForwardRules');
   }
 
   if (!!args.only_allow && !isArray(args.only_allow)) {
@@ -195,6 +195,9 @@ module.exports = args => {
     // Make sure that only explicitly specified edges allow routing
     if (!!isArray(args.only_allow) || !!isArray(args.only_disallow)) {
       const edges = [request.in_channel, request.out_channel];
+      const hasAllowList = !!args.only_allow;
+      const hasDenyList = !!args.only_disallow;
+      const list = args.only_allow || args.only_disallow;
 
       try {
         const [inKeys, outKeys] = await asyncMap(edges, async (id) => {
@@ -220,27 +223,20 @@ module.exports = args => {
         const outKey = inKeys.includes(outKey1) ? outKey2 : outKey1;
 
         // Look for this pairing in the allow/disallow list
-        const isAllowed = () => {
-          if (!!isArray(args.only_allow)) {
-            const isAllowCheck = !!args.only_allow.find(rule => {
-              return rule.inbound_peer === inKey && rule.outbound_peer === outKey;
-            });
+        const isListed = !!list.find(rule => {
+          return rule.inbound_peer === inKey && rule.outbound_peer === outKey;
+        });
 
-            return isAllowCheck;
-          }
-
-          if (!!isArray(args.only_disallow)) {
-            const isAllowCheck = !!args.only_disallow.find(rule => {
-              return rule.inbound_peer === inKey && rule.outbound_peer === outKey;
-            });
-
-            return !isAllowCheck;
-          }
-        }
+        // Allow list means the pair must be listed, deny means must not be
+        const isAllowed = hasAllowList && isListed || hasDenyList && !isListed;
 
         // Block the forward when not explicitly allowed
-        if (!isAllowed()) {
-          return reject('RoutingPairNotDeclaredInOnlyAllow/DisallowList');
+        if (hasAllowList && !isAllowed) {
+          return reject('RoutingPairNotDeclaredInOnlyAllowList');
+        }
+
+        if (hasDenyList && !isAllowed) {
+          return reject('RoutingPairSpecifiedInDenyForwardsList');
         }
       } catch (err) {
         return reject('FailedToFindChannelDetailsForReferencedChannel');
