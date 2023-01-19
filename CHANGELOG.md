@@ -1,5 +1,9 @@
 # Versions
 
+## 4.3.0
+
+- `enforceForwardRequestRules`: Add `only_disallow` to specify edge denials
+
 ## 4.2.0
 
 - `getNodeFunds`: update `onchain_vbytes` to support P2TR UTXOs
