@@ -1,6 +1,6 @@
 # Versions
 
-## 4.3.0
+## 4.3.1
 
 - `enforceForwardRequestRules`: Add `only_disallow` to specify edge denials
 

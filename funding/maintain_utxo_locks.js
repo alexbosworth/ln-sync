@@ -21,7 +21,7 @@ const {max} = Math;
       transaction_id: <Unspent Transaction Id Hex String>
       transaction_vout: <Unspent Transaction Output Index Number>
     }]
-    interval: <Relock Interval Milliseconds>
+    interval: <Relock Interval Milliseconds Number>
     lnd: <Authenticated LND API Object>
   }
 
