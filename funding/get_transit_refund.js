@@ -1,5 +1,6 @@
 const {address} = require('bitcoinjs-lib');
 const asyncAuto = require('async/auto');
+const {getChainFeeRate} = require('ln-service');
 const {networks} = require('bitcoinjs-lib');
 const {payments} = require('bitcoinjs-lib');
 const {returnResult} = require('asyncjs-util');
@@ -7,6 +8,7 @@ const {signTransaction} = require('ln-service');
 const {Transaction} = require('bitcoinjs-lib');
 
 const bufferAsHex = buffer => buffer.toString('hex');
+const {ceil} = Math;
 const {concat} = Buffer;
 const {fromBech32} = address;
 const hexAsBuffer = hex => Buffer.from(hex, 'hex');
@@ -14,6 +16,7 @@ const idAsHash = id => Buffer.from(id, 'hex').reverse();
 const {p2pkh} = payments;
 const refundTxSize = 110;
 const sigHashAll = Buffer.from([Transaction.SIGHASH_ALL]);
+const targetSlow = 144;
 const {toOutputScript} = address;
 const transitKeyFamily = 805;
 
@@ -91,8 +94,18 @@ module.exports = (args, cbk) => {
         return cbk();
       }],
 
+      // Get the chain fee rate
+      getRate: ['validate', ({}, cbk) => {
+        return getChainFeeRate({
+          confirmation_target: targetSlow,
+          lnd: args.lnd,
+        },
+        cbk);
+      }],
+
       // Create the transaction to sign
-      transactionToSign: ['nets', 'validate', ({nets}, cbk) => {
+      transactionToSign: ['getRate', 'nets', ({getRate, nets}, cbk) => {
+        const fee = ceil(getRate.tokens_per_vbyte * refundTxSize);
         const network = nets[args.network];
         const outpointHash = idAsHash(args.transaction_id);
         const tx = new Transaction();
@@ -101,7 +114,7 @@ module.exports = (args, cbk) => {
         const refundOutput = toOutputScript(args.refund_address, network);
 
         tx.addInput(outpointHash, args.transaction_vout, Number());
-        tx.addOutput(refundOutput, args.funded_tokens - refundTxSize);
+        tx.addOutput(refundOutput, args.funded_tokens - fee);
 
         return cbk(null, tx);
       }],

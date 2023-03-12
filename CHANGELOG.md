@@ -1,5 +1,9 @@
 # Versions
 
+## 4.3.2
+
+- `getTransitRefund`: Make method use a fee target
+
 ## 4.3.1
 
 - `enforceForwardRequestRules`: Add `only_disallow` to specify edge denials
