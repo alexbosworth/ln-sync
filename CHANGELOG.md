@@ -1,5 +1,9 @@
 # Versions
 
+## 5.1.0
+
+- `enforceForwardRequestRules`: Add `stop_channels` to block channel forwards
+
 ## 5.0.0
 
 - `getNodeFunds`: Include anchor output value as part of local funds

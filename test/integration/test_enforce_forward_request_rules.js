@@ -4,6 +4,7 @@ const {createChainAddress} = require('ln-service');
 const {createHodlInvoice} = require('ln-service');
 const {createInvoice} = require('ln-service');
 const {deleteForwardingReputations} = require('ln-service');
+const {getChannels} = require('ln-service');
 const {openChannel} = require('ln-service');
 const {pay} = require('ln-service');
 const {sendToChainAddress} = require('ln-service');
@@ -407,6 +408,111 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
           request: (await createInvoice({tokens, lnd: remote.lnd})).request,
         });
       });
+    }
+
+    // Inbound channels can be blocked
+    {
+      // Make sure payments work normally
+      await asyncRetry({interval, times}, async () => {
+        await generate({});
+
+        await pay({
+          lnd,
+          request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+        });
+      });
+
+      const [{id}] = (await getChannels({lnd})).channels;
+
+      // Stop payments on invalid inbound channel
+      const sub = enforceForwardRequestRules({
+        lnd: target.lnd,
+        stop_channels: [id],
+      });
+
+      const rejection = [];
+
+      sub.on('rejected', rejected => rejection.push(rejected));
+
+      // Payment will be rejected
+      try {
+        const payment = await pay({
+          lnd,
+          request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+        });
+
+        strictSame(payment, null, 'Stop channel should have been blocked');
+      } catch (err) {
+        strictSame(
+          err,
+          [503, 'PaymentPathfindingFailedToFindPossibleRoute'],
+          'Inbound channels on stop list are rejected'
+        );
+      }
+
+      const [rejected] = rejection;
+
+      strictSame(
+        rejected.reject_reason,
+        'InboundChannelDeniedDueToStopList',
+        'Failure returns inbound channel block reason'
+      );
+
+      sub.removeAllListeners();
+    }
+
+    // Outbound channels can be blocked
+    {
+      // Make sure payments work normally
+      await asyncRetry({interval, times}, async () => {
+        await generate({});
+
+        // Start from a clean state
+        await deleteForwardingReputations({lnd});
+
+        await pay({
+          lnd,
+          request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+        });
+      });
+
+      const [{id}] = (await getChannels({lnd: remote.lnd})).channels;
+
+      // Stop payments on invalid outbound channel
+      const sub = enforceForwardRequestRules({
+        lnd: target.lnd,
+        stop_channels: [id],
+      });
+
+      const rejection = [];
+
+      sub.on('rejected', rejected => rejection.push(rejected));
+
+      // Payment will be rejected
+      try {
+        const payment = await pay({
+          lnd,
+          request: (await createInvoice({tokens, lnd: remote.lnd})).request,
+        });
+
+        strictSame(payment, null, 'Stop out channel should have been blocked');
+      } catch (err) {
+        strictSame(
+          err,
+          [503, 'PaymentPathfindingFailedToFindPossibleRoute'],
+          'Outbound channels on stop list are rejected'
+        );
+      }
+
+      const [rejected] = rejection;
+
+      strictSame(
+        rejected.reject_reason,
+        'OutboundChannelDeniedDueToStopList',
+        'Failure returns outbound channel block reason'
+      );
+
+      sub.removeAllListeners();
     }
 
     // Deny list will prevent forwarding

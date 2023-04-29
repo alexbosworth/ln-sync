@@ -34,6 +34,7 @@ const secondsPerHour = 60 * 60;
       inbound_peer: <Only Disallow Inbound Peer Public Key Hex String>
       outbound_peer: <Only Disallow Outbound Peer Public Key Hex String>
     }]
+    [stop_channels]: [<Channel Id to Stop Traffic On String>]
   }
 
   @event 'rejected'
@@ -189,6 +190,52 @@ module.exports = args => {
         reject('FailedToGetWalletInfoForChainConstraints');
 
         return emitError([503, 'FailedToGetWalletInfoForChainConstraints']);
+      }
+    }
+
+    // Make sure no stop channel list violations
+    if (!!isArray(args.stop_channels)) {
+      // Exit early when the inbound channel is on the stop channels list
+      if (args.stop_channels.includes(request.in_channel)) {
+        return reject('InboundChannelDeniedDueToStopList');
+      }
+
+      try {
+        // Make sure that the outbound channel is a known identity key pair
+        if (!channelKeys[request.out_channel]) {
+          const {policies} = await getChannel({
+            id: request.out_channel,
+            lnd: args.lnd,
+          });
+
+          channelKeys[request.out_channel] = policies.map(n => n.public_key);
+        }
+
+        // Map channels to stop into public key id pairs
+        const stopPairs = await asyncMap(args.stop_channels, async id => {
+          // Exit early when the channel keys are cached
+          if (!!channelKeys[id]) {
+            return channelKeys[id];
+          }
+
+          const {policies} = await getChannel({id, lnd: args.lnd});
+
+          const keys = policies.map(n => n.public_key);
+
+          // Cache the associated keys with this channel id
+          channelKeys[id] = keys
+
+          return keys;
+        });
+
+        const stopOut = channelKeys[request.out_channel].join();
+
+        // Since outbound is non-strict, reject any identical outbound key pair
+        if (stopPairs.map(n => n.join()).includes(stopOut)) {
+          return reject('OutboundChannelDeniedDueToStopList');
+        }
+      } catch (err) {
+        return reject('FailedToFindChannelDetailsForReferencedStopChannel');
       }
     }
 
