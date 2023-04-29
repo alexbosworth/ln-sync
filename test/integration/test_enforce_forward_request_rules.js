@@ -143,7 +143,7 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
       // Stop payments when channels are too new
       const sub = enforceForwardRequestRules({
         lnd: target.lnd,
-        min_activation_age: 50,
+        min_activation_age: 150,
       });
 
       const rejection = [];
@@ -183,6 +183,8 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
         // Make sure payments work normally after blocks confirm
         const normalPayment = await asyncRetry({interval, times}, async () => {
           await target.generate({count: 100});
+
+          await deleteForwardingReputations({lnd});
 
           return await pay({
             lnd,

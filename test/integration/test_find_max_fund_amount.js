@@ -58,11 +58,14 @@ tests.forEach(({args, description, error, expected}) => {
         }],
       });
 
-      strictSame(
-        maximum,
-        {fee_tokens_per_vbyte: 3, max_tokens: 4999999577},
-        'Maximum funding for inputs is returned'
-      );
+      strictSame(maximum.fee_tokens_per_vbyte, 3, 'Got fee per vbyte');
+
+      // LND 0.15.4 and previous allowed more funds
+      if (maximum.max_tokens === 4999999577) {
+        strictSame(maximum.max_tokens, 4999999577, 'Got max tokens');
+      } else {
+        strictSame(maximum.max_tokens, 4999999541, 'Got max tokens');
+      }
 
       strictSame(
         await getLockedUtxos({lnd}),

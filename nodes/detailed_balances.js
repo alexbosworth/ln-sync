@@ -1,10 +1,12 @@
 const conflictingBalances = require('./conflicting_balances');
 
 const addressTypePayToTaproot = 'p2tr';
+const anchorOutputAmount = 330;
 const {ceil} = Math;
 const flatten = arr => [].concat(...arr);
 const inputsCounterVBytesLength = 3;
 const inputSequenceVByteLength = 4;
+const isAnchor = n => !!n && n.startsWith('anchor');
 const nestedPublicKeyAddressType = 'np2wpkh';
 const nestedPublicKeyVByteLength = 22;
 const outputCounterVBytesLength = 1;
@@ -115,6 +117,12 @@ module.exports = ({channels, locked, pending, transactions, utxos}) => {
     .filter(n => n.is_partner_initiated === false)
     .map(n => n.commit_transaction_fee);
 
+  // Initiator anchor outputs are deducted from the channel local balance
+  const anchorOutputs = channels
+    .filter(n => n.is_partner_initiated === false)
+    .filter(n => isAnchor(n.type))
+    .map(n => anchorOutputAmount);
+
   // Pending channels also have commit transaction fees
   const pendingCommitFees = pending
     .filter(n => n.is_opening && n.is_partner_initiated === false)
@@ -162,6 +170,7 @@ module.exports = ({channels, locked, pending, transactions, utxos}) => {
   const channelBalance = sumOf(flatten([]
     .concat(channelBalances)
     .concat(commitFees)
+    .concat(anchorOutputs)
     .concat(flatten(channelHtlcs))
   ));
 

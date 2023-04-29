@@ -17,6 +17,7 @@ const tests = [
           is_partner_initiated: false,
           local_balance: 5,
           pending_payments: [{is_outgoing: false, tokens: 6}],
+          type: 'anchor',
         },
       ],
       locked: [{
@@ -101,7 +102,7 @@ const tests = [
       closing_balance: 1,
       conflicted_pending: 0,
       invalid_pending: 0,
-      offchain_balance: 14,
+      offchain_balance: 344,
       offchain_pending: 35,
       onchain_balance: 7,
       onchain_vbytes: 268,

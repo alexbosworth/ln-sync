@@ -1,5 +1,13 @@
 # Versions
 
+## 5.0.0
+
+- `getNodeFunds`: Include anchor output value as part of local funds
+
+### Breaking Changes
+
+- End support for Node.js 14, require Node.js 16 or higher
+
 ## 4.3.2
 
 - `getTransitRefund`: Make method use a fee target
