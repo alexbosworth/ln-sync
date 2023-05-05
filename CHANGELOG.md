@@ -1,5 +1,9 @@
 # Versions
 
+## 5.2.0
+
+- `broadcastTransaction`: Wait for valid height to arrive for locked time txs
+
 ## 5.1.0
 
 - `enforceForwardRequestRules`: Add `stop_channels` to block channel forwards

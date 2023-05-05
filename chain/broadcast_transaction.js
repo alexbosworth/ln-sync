@@ -10,6 +10,8 @@ const bufferAsHex = buffer => buffer.toString('hex');
 const {fromHex} = Transaction;
 const fuzzBlocks = 10;
 const isHex = n => !!n && !(n.length % 2) && /^[0-9A-F]*$/i.test(n);
+const maxLockTime = 500000000;
+const maxSequence = 0xFFFFFFFF;
 
 /** Broadcast a chain transaction until it gets confirmed in a block
 
@@ -54,8 +56,47 @@ module.exports = ({description, lnd, logger, transaction}, cbk) => {
       // Get the current block height for watching for confirmation
       getHeight: ['validate', ({}, cbk) => getHeight({lnd}, cbk)],
 
+      // Wait for locktime height
+      waitForLockTime: ['getHeight', ({getHeight}, cbk) => {
+        const {ins, locktime} = fromHex(transaction);
+
+        // Exit early when all inputs have max sequence and timelock is ignored
+        if (!ins.filter(n => n.sequence !== maxSequence).length) {
+          return cbk();
+        }
+
+        // Exit early when not waiting for lock time
+        if (locktime >= maxLockTime) {
+          return cbk();
+        }
+
+        // Exit early when not constrained
+        if (locktime <= getHeight.current_block_height) {
+          return cbk();
+        }
+
+        const sub = subscribeToBlocks({lnd});
+
+        sub.on('block', ({height}) => {
+          // Exit early when the locked height is no longer in the future
+          if (locktime <= height) {
+            sub.removeAllListeners();
+
+            return cbk();
+          }
+
+          return logger.info({timelocked_until: locktime, current: height});
+        });
+
+        sub.on('error', err => {
+          sub.removeAllListeners();
+
+          return cbk([503, 'UnexpectedErrorSubscribingToBlocks', {err}]);
+        });
+      }],
+
       // Push transaction to the mempool and keep pushing until it's confirmed
-      broadcast: ['getHeight', ({getHeight}, cbk) => {
+      broadcast: ['getHeight', 'waitForLockTime', ({getHeight}, cbk) => {
         let isConfirmed = false;
         const [{script}] = fromHex(transaction).outs;
 
@@ -97,7 +138,7 @@ module.exports = ({description, lnd, logger, transaction}, cbk) => {
         });
 
         // Wait for confirmation to continue
-        confirmationSub.on('confirmation', ({height}) => {
+        confirmationSub.on('confirmation', ({height, transaction}) => {
           isConfirmed = true;
 
           [blocksSub, confirmationSub].forEach(n => n.removeAllListeners());
