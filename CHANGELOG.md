@@ -1,5 +1,9 @@
 # Versions
 
+## 5.2.1
+
+- `getMaxFundAmount`: Fix getting max amount when selected input is unconfirmed
+
 ## 5.2.0
 
 - `broadcastTransaction`: Wait for valid height to arrive for locked time txs

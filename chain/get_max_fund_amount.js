@@ -8,6 +8,7 @@ const {Transaction} = require('bitcoinjs-lib');
 const {unlockUtxo} = require('ln-service');
 
 const adjustFactor = 10;
+const allowZeroConfirmationInputs = 0;
 const {ceil} = Math;
 const dust = 546;
 const {fromHex} = Transaction;
@@ -66,6 +67,7 @@ module.exports = (args, cbk) => {
             transaction_vout: input.transaction_vout,
           })),
           lnd: args.lnd,
+          min_confirmations: allowZeroConfirmationInputs,
           outputs: args.addresses.map(address => ({address, tokens: dust})),
         },
         cbk);
@@ -108,6 +110,7 @@ module.exports = (args, cbk) => {
             transaction_vout: input.transaction_vout,
           })),
           lnd: args.lnd,
+          min_confirmations: allowZeroConfirmationInputs,
           outputs: args.addresses.map((address, i) => ({
             address,
             tokens: !i ? dust + max - baseline : dust,
@@ -142,6 +145,7 @@ module.exports = (args, cbk) => {
             transaction_vout: input.transaction_vout,
           })),
           lnd: args.lnd,
+          min_confirmations: allowZeroConfirmationInputs,
           outputs: args.addresses.map((address, i) => ({
             address,
             tokens: !i ? dust + max - baseline - adjustment : dust,
