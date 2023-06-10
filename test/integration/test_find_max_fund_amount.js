@@ -58,7 +58,7 @@ tests.forEach(({args, description, error, expected}) => {
         }],
       });
 
-      strictSame(maximum.fee_tokens_per_vbyte, 3, 'Got fee per vbyte');
+      strictSame(maximum.fee_tokens_per_vbyte, 4.172727272727273, 'Got fee');
 
       // LND 0.15.4 and previous allowed more funds
       if (maximum.max_tokens === 4999999577) {

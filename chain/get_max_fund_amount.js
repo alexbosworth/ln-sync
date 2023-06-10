@@ -155,8 +155,8 @@ module.exports = (args, cbk) => {
       }],
 
       // Sign the maximum to get the raw transaction for fee calculation
-      finalizeMaximum: ['createTemplate', ({createTemplate}, cbk) => {
-        return signPsbt({lnd: args.lnd, psbt: createTemplate.psbt}, cbk);
+      finalizeMaximum: ['createMaximum', ({createMaximum}, cbk) => {
+        return signPsbt({lnd: args.lnd, psbt: createMaximum.psbt}, cbk);
       }],
 
       // Derive the maximum spendable tokens from the final TX
