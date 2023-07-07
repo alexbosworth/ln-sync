@@ -1,4 +1,6 @@
-const {test} = require('@alexbosworth/tap');
+const {deepEqual} = require('node:assert').strict;
+const test = require('node:test');
+const {throws} = require('node:assert').strict;
 
 const peerLiquidity = require('./../../peers/peer_liquidity');
 
@@ -52,13 +54,13 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, ({end, strictSame, throws}) => {
+  return test(description, (t, end) => {
     if (!!error) {
       throws(() => peerLiquidity(args), new Error(error));
     } else {
       const liquidity = peerLiquidity(args);
 
-      strictSame(liquidity, expected.liquidity, 'Got expected liquidity');
+      deepEqual(liquidity, expected.liquidity, 'Got expected liquidity');
     }
 
     return end();

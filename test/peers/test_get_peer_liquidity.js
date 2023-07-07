@@ -1,4 +1,6 @@
-const {test} = require('@alexbosworth/tap');
+const {equal} = require('node:assert').strict;
+const {rejects} = require('node:assert').strict;
+const test = require('node:test');
 
 const {chanInfoResponse} = require('./../fixtures');
 const {listChannelsResponse} = require('./../fixtures');
@@ -50,9 +52,9 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, equal, rejects}) => {
+  return test(description, async () => {
     if (!!error) {
-      rejects(getPeerLiquidity(args), error, 'Got expected error');
+      await rejects(getPeerLiquidity(args), error, 'Got expected error');
     } else {
       const peer = await getPeerLiquidity(args);
 
@@ -61,6 +63,6 @@ tests.forEach(({args, description, error, expected}) => {
       equal(peer.outbound, expected.outbound, 'Total outbound is returned');
     }
 
-    return end();
+    return;
   });
 });

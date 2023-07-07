@@ -1,6 +1,8 @@
+const {deepEqual} = require('node:assert').strict;
 const {makeWalletVersionResponse} = require('mock-lnd');
 const {makeLnd} = require('mock-lnd');
-const {test} = require('@alexbosworth/tap');
+const {rejects} = require('node:assert').strict;
+const test = require('node:test');
 
 const method = require('./../../funding/is_external_funding');
 
@@ -54,15 +56,15 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, rejects, strictSame}) => {
+  return test(description, async () => {
     if (!!error) {
       await rejects(method(args), error, 'Got expected error');
     } else {
       const got = await method(args);
 
-      strictSame(got, expected, 'Got expected result');
+      deepEqual(got, expected, 'Got expected result');
     }
 
-    return end();
+    return;
   });
 });

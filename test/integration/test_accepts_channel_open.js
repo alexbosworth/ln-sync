@@ -1,14 +1,11 @@
-const {once} = require('events');
+const {deepEqual} = require('node:assert').strict;
+const test = require('node:test');
 
 const {addPeer} = require('ln-service');
-const asyncAuto = require('async/auto');
 const asyncRetry = require('async/retry');
-const {cancelPendingChannel} = require('ln-service');
-const {getPendingChannels} = require('ln-service');
 const {openChannels} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
 const {subscribeToOpenRequests} = require('ln-service');
-const {test} = require('@alexbosworth/tap');
 
 const {acceptsChannelOpen} = require('./../../');
 
@@ -19,7 +16,7 @@ const maturityBlocks = 100;
 const size = 2;
 const times = 2000;
 
-return test('Check if peer accepts open', async ({end, fail, strictSame}) => {
+return test('Check if peer accepts open', async () => {
   const {kill, nodes} = await spawnLightningCluster({size});
 
   const [{generate, id, lnd}, target] = nodes;
@@ -42,7 +39,7 @@ return test('Check if peer accepts open', async ({end, fail, strictSame}) => {
       });
     });
 
-    strictSame(shouldAccept, {is_accepted: true}, 'Node accepts a channel');
+    deepEqual(shouldAccept, {is_accepted: true}, 'Node accepts a channel');
 
     try {
       await acceptsChannelOpen({
@@ -56,7 +53,7 @@ return test('Check if peer accepts open', async ({end, fail, strictSame}) => {
     } catch (error) {
       const [,, {err}] = error;
 
-      strictSame(err.details, 'requested channel type not supported', 'Fail');
+      deepEqual(err.details, 'requested channel type not supported', 'Fail');
     }
 
     const sub = subscribeToOpenRequests({lnd: target.lnd});
@@ -73,13 +70,13 @@ return test('Check if peer accepts open', async ({end, fail, strictSame}) => {
         partner_public_key: target.id,
       });
     } catch (err) {
-      strictSame(!!err, true, 'Channel is rejected');
+      deepEqual(!!err, true, 'Channel is rejected');
     }
   } catch (err) {
-    strictSame(err, null, 'Expected no error');
-  } finally {
-    await kill({});
-
-    return end();
+    deepEqual(err, null, 'Expected no error');
   }
+
+  await kill({});
+
+  return;
 });

@@ -1,5 +1,8 @@
+const {deepEqual} = require('node:assert').strict;
+const {fail} = require('node:assert').strict;
+const test = require('node:test');
+
 const {spawnLightningCluster} = require('ln-docker-daemons');
-const {test} = require('@alexbosworth/tap');
 
 const {getNetwork} = require('./../../');
 
@@ -12,19 +15,19 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, fail, strictSame}) => {
+  return test(description, async () => {
     const [{id, kill, lnd}] = (await spawnLightningCluster({})).nodes;
 
     try {
       const res = await getNetwork(args({id, lnd}));
 
-      strictSame(res, expected({id}), 'Got expected result');
+      deepEqual(res, expected({id}), 'Got expected result');
     } catch (err) {
       fail(err);
     }
 
     await kill({});
 
-    return end();
+    return;
   });
 });

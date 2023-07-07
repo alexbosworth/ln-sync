@@ -1,9 +1,12 @@
+const {deepEqual} = require('node:assert').strict;
+const {fail} = require('node:assert').strict;
+const test = require('node:test');
+
 const asyncRetry = require('async/retry');
 const {createChainAddress} = require('ln-service');
 const {getUtxos} = require('ln-service');
 const {sendToChainAddress} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
-const {test} = require('@alexbosworth/tap');
 
 const {findConfirmedOutput} = require('./../../');
 
@@ -14,7 +17,7 @@ const times = 2000;
 const tokens = 1e5;
 const wait = 1000;
 
-test('Find confirmed output', async ({end, fail, strictSame}) => {
+test('Find confirmed output', async () => {
   const {kill, nodes} = await spawnLightningCluster({});
 
   const [{generate, lnd}] = nodes;
@@ -42,7 +45,7 @@ test('Find confirmed output', async ({end, fail, strictSame}) => {
       });
     });
 
-    strictSame(confirmed.is_coinbase, true, 'Found coinbase output');
+    deepEqual(confirmed.is_coinbase, true, 'Found coinbase output');
 
     const {address} = await createChainAddress({lnd});
 
@@ -68,7 +71,7 @@ test('Find confirmed output', async ({end, fail, strictSame}) => {
 
       fail('Should fail to find confirmed output');
     } catch (err) {
-      strictSame(err, [503, 'TimedOutWaitingForOnchainOutput']);
+      deepEqual(err, [503, 'TimedOutWaitingForOnchainOutput']);
     }
 
     // Find a regular output
@@ -81,12 +84,12 @@ test('Find confirmed output', async ({end, fail, strictSame}) => {
       timeout_ms: 1000 * 10,
     });
 
-    strictSame(confirmedSent.is_coinbase, false, 'Found non-coinbase output');
+    deepEqual(confirmedSent.is_coinbase, false, 'Found non-coinbase output');
   } catch (err) {
-    strictSame(err, null, 'Expected no error');
-  } finally {
-    await kill({});
-
-    return end();
+    deepEqual(err, null, 'Expected no error');
   }
+
+  await kill({});
+
+  return;
 });

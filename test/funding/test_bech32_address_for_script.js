@@ -1,4 +1,6 @@
-const {test} = require('@alexbosworth/tap');
+const {deepEqual} = require('node:assert').strict;
+const test = require('node:test');
+const {throws} = require('node:assert').strict;
 
 const method = require('./../../funding/bech32_address_as_script');
 
@@ -24,7 +26,7 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, ({end, strictSame, throws}) => {
+  return test(description, (t, end) => {
     if (!!error) {
       throws(() => method(args), new Error(error), 'Error returned');
 
@@ -32,7 +34,7 @@ tests.forEach(({args, description, error, expected}) => {
     } else {
       const got = method(args);
 
-      strictSame(got, expected, 'Got expected result');
+      deepEqual(got, expected, 'Got expected result');
     }
 
     return end();

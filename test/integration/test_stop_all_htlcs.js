@@ -1,3 +1,6 @@
+const {deepEqual} = require('node:assert').strict;
+const test = require('node:test');
+
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
 const asyncRetry = require('async/retry');
@@ -11,7 +14,6 @@ const {openChannel} = require('ln-service');
 const {pay} = require('ln-service');
 const {sendToChainAddress} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
-const {test} = require('@alexbosworth/tap');
 
 const {stopAllHtlcs} = require('./../../');
 
@@ -23,7 +25,7 @@ const times = 2000;
 const tokens = 10;
 const uniq = arr => Array.from(new Set(arr));
 
-return test('Stop all HTLCs', async ({end, strictSame}) => {
+return test('Stop all HTLCs', async () => {
   const {kill, nodes} = (await spawnLightningCluster({size}));
 
   const [control, target, remote] = nodes;
@@ -134,14 +136,11 @@ return test('Stop all HTLCs', async ({end, strictSame}) => {
         return await closeChannel({id, is_force_close: true, lnd: target.lnd});
       }],
     });
-
-    // Try paying to confirm it fails
-    // Close the channel
   } catch (err) {
-    strictSame(err, null, 'Expected no error');
-  } finally {
-    await kill({});
+    deepEqual(err, null, 'Expected no error');
   }
 
-  return end();
+  await kill({});
+
+  return;
 });

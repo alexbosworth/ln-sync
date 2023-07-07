@@ -1,9 +1,11 @@
+const {deepEqual} = require('node:assert').strict;
+const test = require('node:test');
+
 const {addPeer} = require('ln-service');
 const asyncRetry = require('async/retry');
 const {closeChannel} = require('ln-service');
 const {openChannel} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
-const {test} = require('@alexbosworth/tap');
 
 const {subscribeToPendingChannels} = require('./../../');
 
@@ -14,7 +16,7 @@ const interval = 10;
 const size = 2;
 const times = 1000;
 
-return test('Subscribe to pending chans', async ({end, fail, strictSame}) => {
+return test('Subscribe to pending chans', async () => {
   const {kill, nodes} = (await spawnLightningCluster({size}));
 
   const [{generate, lnd}, target] = nodes;
@@ -58,10 +60,10 @@ return test('Subscribe to pending chans', async ({end, fail, strictSame}) => {
       }
     });
   } catch (err) {
-    strictSame(err, null, 'Expected no error');
+    deepEqual(err, null, 'Expected no error');
   }
 
   await kill({});
 
-  return end();
+  return;
 });

@@ -1,3 +1,6 @@
+const {deepEqual} = require('node:assert').strict;
+const test = require('node:test');
+
 const {addPeer} = require('ln-service');
 const asyncRetry = require('async/retry');
 const {fundPendingChannels} = require('ln-service');
@@ -6,7 +9,6 @@ const {getPendingChannels} = require('ln-service');
 const {openChannels} = require('ln-service');
 const {signPsbt} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
-const {test} = require('@alexbosworth/tap');
 
 const {waitForPendingOpen} = require('./../../');
 
@@ -17,7 +19,7 @@ const maturityBlocks = 100;
 const size = 2;
 const times = 2000;
 
-return test('Wait for a pending open', async ({end, fail, strictSame}) => {
+return test('Wait for a pending open', async () => {
   const {kill, nodes} = await spawnLightningCluster({size});
 
   const [{generate, id, lnd}, target] = nodes;
@@ -77,13 +79,13 @@ return test('Wait for a pending open', async ({end, fail, strictSame}) => {
       transaction_vout: channel.transaction_vout,
     });
 
-    strictSame(got.transaction_id, channel.transaction_id, 'Got tx id');
-    strictSame(got.transaction_vout, channel.transaction_vout, 'Got tx vout');
+    deepEqual(got.transaction_id, channel.transaction_id, 'Got tx id');
+    deepEqual(got.transaction_vout, channel.transaction_vout, 'Got tx vout');
   } catch (err) {
-    strictSame(err, null, 'Expected no error');
-  } finally {
-    await kill({});
-
-    return end();
+    deepEqual(err, null, 'Expected no error');
   }
+
+  await kill({});
+
+  return;
 });

@@ -1,3 +1,6 @@
+const {deepEqual} = require('node:assert').strict;
+const test = require('node:test');
+
 const asyncRetry = require('async/retry');
 const {broadcastChainTransaction} = require('ln-service');
 const {createChainAddress} = require('ln-service');
@@ -7,7 +10,6 @@ const {networks} = require('bitcoinjs-lib');
 const {payments} = require('bitcoinjs-lib');
 const {sendToChainAddress} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
-const {test} = require('@alexbosworth/tap');
 const {Transaction} = require('bitcoinjs-lib');
 
 const {getNetwork} = require('./../../');
@@ -20,7 +22,7 @@ const {p2wpkh} = payments;
 const tokens = 1e6;
 const transitKeyFamily = 805;
 
-return test('Get a refund transaction', async ({end, fail, strictSame}) => {
+return test('Get a refund transaction', async () => {
   const {kill, nodes} = await spawnLightningCluster({});
 
   const [{generate, id, lnd}] = nodes;
@@ -80,10 +82,10 @@ return test('Get a refund transaction', async ({end, fail, strictSame}) => {
       throw new Error('ExpectedRefundTransactionConfirmed');
     });
   } catch (err) {
-    strictSame(err, null, 'Expected no error');
-  } finally {
-    await kill({});
-
-    return end();
+    deepEqual(err, null, 'Expected no error');
   }
+
+  await kill({});
+
+  return;
 });

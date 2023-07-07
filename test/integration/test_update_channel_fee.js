@@ -1,10 +1,12 @@
+const {deepEqual} = require('node:assert').strict;
+const test = require('node:test');
+
 const asyncAuto = require('async/auto');
 const asyncRetry = require('async/retry');
 const {getChannel} = require('ln-service');
 const {getChannels} = require('ln-service');
 const {openChannel} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
-const {test} = require('@alexbosworth/tap');
 
 const {updateChannelFee} = require('./../../');
 
@@ -14,7 +16,7 @@ const maturityBlocks = 100;
 const size = 2;
 const times = 2000;
 
-return test('Update a channel fee', async ({end, fail, strictSame}) => {
+return test('Update a channel fee', async () => {
   const {kill, nodes} = await spawnLightningCluster({size});
 
   const [{generate, id, lnd}, target] = nodes;
@@ -70,13 +72,13 @@ return test('Update a channel fee', async ({end, fail, strictSame}) => {
 
     expected.updated_at = policy.updated_at;
 
-    strictSame(policy, expected, 'Got expected policy updates');
+    deepEqual(policy, expected, 'Got expected policy updates');
   } catch (err) {
-    strictSame(err, null, 'Expected no error');
-  } finally {
-    // Always clean up the test instances
-    await kill({});
-
-    return end();
+    deepEqual(err, null, 'Expected no error');
   }
+
+  // Always clean up the test instances
+  await kill({});
+
+  return;
 });

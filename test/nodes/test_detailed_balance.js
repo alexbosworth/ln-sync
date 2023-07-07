@@ -1,4 +1,6 @@
-const {test} = require('@alexbosworth/tap');
+const {deepEqual} = require('node:assert').strict;
+const test = require('node:test');
+const {throws} = require('node:assert').strict;
 
 const detailedBalances = require('./../../nodes/detailed_balances');
 
@@ -124,16 +126,14 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, ({end, equal, strictSame, throws}) => {
+  return test(description, (t, end) => {
     if (!!error) {
       throws(() => detailedBalances(args), new Error(error));
+    } else {
+      const balances = detailedBalances(args);
 
-      return end();
+      deepEqual(balances, expected, 'Got expected balances');
     }
-
-    const balances = detailedBalances(args);
-
-    strictSame(balances, expected, 'Got expected balances');
 
     return end();
   });

@@ -1,4 +1,6 @@
-const {test} = require('@alexbosworth/tap');
+const {equal} = require('node:assert').strict;
+const {rejects} = require('node:assert').strict;
+const test = require('node:test');
 
 const {getInfoResponse} = require('./../fixtures');
 const {getNetwork} = require('./../../');
@@ -53,15 +55,15 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, equal, rejects}) => {
+  return test(description, async () => {
     if (!!error) {
-      rejects(getNetwork(args), error, 'Got expected error');
+      await rejects(getNetwork(args), error, 'Got expected error');
     } else {
       const {network} = await getNetwork(args);
 
       equal(network, expected.network, 'Got expected network');
     }
 
-    return end();
+    return;
   });
 });

@@ -1,8 +1,11 @@
+const {deepEqual} = require('node:assert').strict;
+const {ok} = require('node:assert').strict;
+const test = require('node:test');
+
 const asyncAuto = require('async/auto');
 const asyncRetry = require('async/retry');
 const {getChainTransactions} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
-const {test} = require('@alexbosworth/tap');
 
 const {broadcastTransaction} = require('./../../');
 const {reserveTransitFunds} = require('./../../');
@@ -14,7 +17,7 @@ const times = 20000;
 const tokens = 1e6;
 
 // Reserve transit funds should produce a transit tx and a refund of that tx
-test(`Reserve transit funds`, async ({end, equal, strictSame, ok}) => {
+test(`Reserve transit funds`, async () => {
   const {kill, nodes} = await spawnLightningCluster({});
 
   const [{generate, lnd}] = nodes;
@@ -113,9 +116,9 @@ test(`Reserve transit funds`, async ({end, equal, strictSame, ok}) => {
     });
   } catch (err) {
     equal(err, null, 'Expected no error');
-  } finally {
-    await kill({});
   }
 
-  return end();
+  await kill({});
+
+  return;
 });

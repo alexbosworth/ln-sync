@@ -1,3 +1,6 @@
+const {deepEqual} = require('node:assert').strict;
+const test = require('node:test');
+
 const {addPeer} = require('ln-service');
 const asyncRetry = require('async/retry');
 const {createChainAddress} = require('ln-service');
@@ -11,7 +14,6 @@ const {sendToChainAddress} = require('ln-service');
 const {settleHodlInvoice} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
 const {subscribeToInvoice} = require('ln-service');
-const {test} = require('@alexbosworth/tap');
 
 const {enforceForwardRequestRules} = require('./../../');
 
@@ -27,7 +29,7 @@ const tokens = 100;
 
 const lnService = require('ln-service');
 
-return test('Request rules are enforced', async ({end, fail, strictSame}) => {
+return test('Request rules are enforced', async () => {
   const {kill, nodes} = await spawnLightningCluster({size});
 
   const [{generate, id, lnd}, target, remote] = nodes;
@@ -106,9 +108,9 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
           request: (await createInvoice({tokens, lnd: remote.lnd})).request,
         });
 
-        strictSame(payment, null, 'Payment should have been blocked');
+        deepEqual(payment, null, 'Payment should have been blocked');
       } catch (err) {
-        strictSame(
+        deepEqual(
           err,
           [503, 'PaymentPathfindingFailedToFindPossibleRoute'],
           'Blocks that take too long trigger rejection'
@@ -117,7 +119,7 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
 
       const [rejected] = rejection;
 
-      strictSame(
+      deepEqual(
         rejected.reject_reason,
         'LastBlockReceivedTooLongAgo',
         'Block time constraint returns block timing reason'
@@ -158,9 +160,9 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
           request: (await createInvoice({tokens, lnd: remote.lnd})).request,
         });
 
-        strictSame(payment, null, 'Payment should have been blocked');
+        deepEqual(payment, null, 'Payment should have been blocked');
       } catch (err) {
-        strictSame(
+        deepEqual(
           err,
           [503, 'PaymentPathfindingFailedToFindPossibleRoute'],
           'New channels reject payments'
@@ -169,7 +171,7 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
 
       const [rejected] = rejection;
 
-      strictSame(
+      deepEqual(
         rejected.reject_reason,
         'WaitingForChannelConfirmationActivation',
         'Activation age successfully blocks forwards'
@@ -193,9 +195,9 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
           });
         });
 
-        strictSame(!!normalPayment, true, 'Payment is made after confs');
+        deepEqual(!!normalPayment, true, 'Payment is made after confs');
       } catch (err) {
-        strictSame(err, null, 'Expected no error after enough blocks');
+        deepEqual(err, null, 'Expected no error after enough blocks');
       }
 
       sub.removeAllListeners();
@@ -235,9 +237,9 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
           request: (await createInvoice({tokens, lnd: remote.lnd})).request,
         });
 
-        strictSame(payment, null, 'No payment should be made');
+        deepEqual(payment, null, 'No payment should be made');
       } catch (err) {
-        strictSame(
+        deepEqual(
           err,
           [503, 'PaymentPathfindingFailedToFindPossibleRoute'],
           'All payments are blocked'
@@ -246,7 +248,7 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
 
       const [rejected] = rejection;
 
-      strictSame(rejected, 'NoNewHtlcsAccepted', 'All payments blocked now');
+      deepEqual(rejected, 'NoNewHtlcsAccepted', 'All payments blocked now');
 
       sub.removeAllListeners();
     }
@@ -293,9 +295,9 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
             lnd,
             request: (await createInvoice({tokens, lnd: remote.lnd})).request,
           });
-          strictSame(payment, null, 'Expected no payment can be made');
+          deepEqual(payment, null, 'Expected no payment can be made');
         } catch (err) {
-          strictSame(
+          deepEqual(
             err,
             [503, 'PaymentPathfindingFailedToFindPossibleRoute'],
             'Pending HTLCs block new payments'
@@ -305,7 +307,7 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
         // The rate-limited payment generated a rejection event
         const [rejected] = rejection;
 
-        strictSame(
+        deepEqual(
           rejected.reject_reason,
           'TooManyNewPendingHtlcsInThePastHour',
           'Reason for rejection is too many pending HTLCs'
@@ -364,9 +366,9 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
           request: (await createInvoice({tokens, lnd: remote.lnd})).request,
         });
 
-        strictSame(payment, null, 'Expected that control to remote blocked');
+        deepEqual(payment, null, 'Expected that control to remote blocked');
       } catch (err) {
-        strictSame(
+        deepEqual(
           err,
           [503, 'PaymentPathfindingFailedToFindPossibleRoute'],
           'Control to remote payments blocked'
@@ -384,13 +386,13 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
           });
         });
       } catch (err) {
-        strictSame(err, null, 'Remote to control should work');
+        deepEqual(err, null, 'Remote to control should work');
       }
 
       // A rejection event was generated
       const [rejected] = rejection;
 
-      strictSame(
+      deepEqual(
         rejected.reject_reason,
         'RoutingPairNotDeclaredInOnlyAllowList',
         'Payments are limited by allow list'
@@ -441,9 +443,9 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
           request: (await createInvoice({tokens, lnd: remote.lnd})).request,
         });
 
-        strictSame(payment, null, 'Stop channel should have been blocked');
+        deepEqual(payment, null, 'Stop channel should have been blocked');
       } catch (err) {
-        strictSame(
+        deepEqual(
           err,
           [503, 'PaymentPathfindingFailedToFindPossibleRoute'],
           'Inbound channels on stop list are rejected'
@@ -452,7 +454,7 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
 
       const [rejected] = rejection;
 
-      strictSame(
+      deepEqual(
         rejected.reject_reason,
         'InboundChannelDeniedDueToStopList',
         'Failure returns inbound channel block reason'
@@ -495,9 +497,9 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
           request: (await createInvoice({tokens, lnd: remote.lnd})).request,
         });
 
-        strictSame(payment, null, 'Stop out channel should have been blocked');
+        deepEqual(payment, null, 'Stop out channel should have been blocked');
       } catch (err) {
-        strictSame(
+        deepEqual(
           err,
           [503, 'PaymentPathfindingFailedToFindPossibleRoute'],
           'Outbound channels on stop list are rejected'
@@ -506,7 +508,7 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
 
       const [rejected] = rejection;
 
-      strictSame(
+      deepEqual(
         rejected.reject_reason,
         'OutboundChannelDeniedDueToStopList',
         'Failure returns outbound channel block reason'
@@ -547,9 +549,9 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
           request: (await createInvoice({tokens, lnd: remote.lnd})).request,
         });
 
-        strictSame(payment, null, 'Expected that control to remote denied');
+        deepEqual(payment, null, 'Expected that control to remote denied');
       } catch (err) {
-        strictSame(
+        deepEqual(
           err,
           [503, 'PaymentPathfindingFailedToFindPossibleRoute'],
           'Control to remote payments denied'
@@ -567,13 +569,13 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
           });
         });
       } catch (err) {
-        strictSame(err, null, 'Remote to control should not be denied');
+        deepEqual(err, null, 'Remote to control should not be denied');
       }
 
       // A rejection event was generated
       const [rejected] = rejection;
 
-      strictSame(
+      deepEqual(
         rejected.reject_reason,
         'RoutingPairSpecifiedInDenyForwardsList',
         'Payments are limited by deny list'
@@ -593,10 +595,10 @@ return test('Request rules are enforced', async ({end, fail, strictSame}) => {
       });
     }
   } catch (err) {
-    strictSame(err, null, 'Expected no error');
-  } finally {
-    await kill({});
-
-    return end();
+    deepEqual(err, null, 'Expected no error');
   }
+
+  await kill({});
+
+  return;
 });

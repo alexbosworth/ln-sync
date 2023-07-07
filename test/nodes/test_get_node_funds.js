@@ -1,4 +1,7 @@
-const {test} = require('@alexbosworth/tap');
+const {deepEqual} = require('node:assert').strict;
+const {rejects} = require('node:assert').strict;
+const test = require('node:test');
+
 const {makeLnd} = require('mock-lnd');
 
 const method = require('./../../nodes/get_node_funds');
@@ -48,15 +51,15 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, rejects, strictSame}) => {
+  return test(description, async () => {
     if (!!error) {
       await rejects(method(args), error, 'Got expected error');
     } else {
       const res = await method(args);
 
-      strictSame(res, expected, 'Got expected result');
+      deepEqual(res, expected, 'Got expected result');
     }
 
-    return end();
+    return;
   });
 });

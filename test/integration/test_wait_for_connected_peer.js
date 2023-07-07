@@ -1,14 +1,17 @@
+const {deepEqual} = require('node:assert').strict;
+const {rejects} = require('node:assert').strict;
+const test = require('node:test');
+
 const {addPeer} = require('ln-service');
 const asyncAuto = require('async/auto');
 const asyncRetry = require('async/retry');
 const {spawnLightningCluster} = require('ln-docker-daemons');
-const {test} = require('@alexbosworth/tap');
 
 const {waitForConnectedPeer} = require('./../../');
 
 const size = 2;
 
-return test('Peer is connected', async ({end, fail, rejects, strictSame}) => {
+return test('Peer is connected', async () => {
   const {kill, nodes} = (await spawnLightningCluster({size}));
 
   const [{lnd}, target] = nodes;
@@ -26,10 +29,10 @@ return test('Peer is connected', async ({end, fail, rejects, strictSame}) => {
 
     await waitForConnectedPeer({lnd, id: target.id});
   } catch (err) {
-    strictSame(err, null, 'No error is expected');
+    deepEqual(err, null, 'No error is expected');
   }
 
   await kill({});
 
-  return end();
+  return;
 });

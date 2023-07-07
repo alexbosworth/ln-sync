@@ -1,4 +1,6 @@
-const {test} = require('@alexbosworth/tap');
+const {deepEqual} = require('node:assert').strict;
+const {rejects} = require('node:assert').strict;
+const test = require('node:test');
 
 const {chanInfoResponse} = require('./../fixtures');
 const {pendingChannelsResponse} = require('./../fixtures');
@@ -172,13 +174,13 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, equal, rejects}) => {
+  return test(description, async () => {
     if (!!error) {
       await rejects(updateChannelFee(args), error, 'Got expected error');
     } else {
       await updateChannelFee(args);
     }
 
-    return end();
+    return;
   });
 });

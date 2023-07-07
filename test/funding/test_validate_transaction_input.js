@@ -1,4 +1,7 @@
-const {test} = require('@alexbosworth/tap');
+const {deepEqual} = require('node:assert').strict;
+const test = require('node:test');
+const {throws} = require('node:assert').strict;
+
 const tinysecp = require('tiny-secp256k1');
 
 const method = require('./../../funding/validate_transaction_input');
@@ -79,21 +82,19 @@ const tests = [
 ];
 
 tests.forEach(({args, description, error, expected}) => {
-  return test(description, async ({end, strictSame, throws}) => {
+  return test(description, async () => {
     const ecp = (await import('ecpair')).ECPairFactory(tinysecp);
 
     args.ecp = ecp;
 
     if (!!error) {
       throws(() => method(args), new Error(error), 'Error returned');
-
-      return end();
     } else {
       const got = method(args);
 
-      strictSame(got, expected, 'Got expected result');
+      deepEqual(got, expected, 'Got expected result');
     }
 
-    return end();
+    return;
   });
 });

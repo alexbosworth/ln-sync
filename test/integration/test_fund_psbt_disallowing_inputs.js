@@ -1,9 +1,12 @@
+const {deepEqual} = require('node:assert').strict;
+const {rejects} = require('node:assert').strict;
+const test = require('node:test');
+
 const asyncRetry = require('async/retry');
 const {createChainAddress} = require('ln-service');
 const {getUtxos} = require('ln-service');
 const {sendToChainAddress} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
-const {test} = require('@alexbosworth/tap');
 
 const {fundPsbtDisallowingInputs} = require('./../../');
 
@@ -14,7 +17,7 @@ const size = 2;
 const times = 2000;
 const tokens = 1e6;
 
-return test('Fund disallowing inputs', async ({end, rejects, strictSame}) => {
+return test('Fund disallowing inputs', async () => {
   const {kill, nodes} = await spawnLightningCluster({size});
 
   const [{generate, lnd}, target] = nodes;
@@ -67,12 +70,12 @@ return test('Fund disallowing inputs', async ({end, rejects, strictSame}) => {
       outputs: [{address, tokens: (tokens / 2)}],
     });
 
-    strictSame(funds.outputs.length , 2, 'Got expected outputs');
+    deepEqual(funds.outputs.length , 2, 'Got expected outputs');
   } catch (err) {
-    strictSame(err, null, 'Expected no error');
-  } finally {
-    await kill({});
-
-    return end();
+    deepEqual(err, null, 'Expected no error');
   }
+
+  await kill({});
+
+  return;
 });

@@ -1,3 +1,6 @@
+const {deepEqual} = require('node:assert').strict;
+const test = require('node:test');
+
 const asyncAuto = require('async/auto');
 const asyncRetry = require('async/retry');
 const {createChainAddress} = require('ln-service');
@@ -6,7 +9,6 @@ const {getChainTransactions} = require('ln-service');
 const {fundPsbt} = require('ln-service');
 const {signPsbt} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
-const {test} = require('@alexbosworth/tap');
 const tinysecp = require('tiny-secp256k1');
 
 const {broadcastTransaction} = require('./../../');
@@ -17,7 +19,7 @@ const maturity = 100;
 const times = 2000;
 const tokens = 1e6;
 
-return test('Transaction is broadcast', async ({end, fail, strictSame}) => {
+return test('Transaction is broadcast', async () => {
   const [{generate, kill, lnd}] = (await spawnLightningCluster({})).nodes;
 
   const ecp = (await import('ecpair')).ECPairFactory(tinysecp);
@@ -66,13 +68,13 @@ return test('Transaction is broadcast', async ({end, fail, strictSame}) => {
       }),
     });
 
-    strictSame(mine.description, description, 'Got tx confirmed into block');
-    strictSame(mine.is_confirmed, true, 'Tx is confirmed into a block');
+    deepEqual(mine.description, description, 'Got tx confirmed into block');
+    deepEqual(mine.is_confirmed, true, 'Tx is confirmed into a block');
   } catch (err) {
-    strictSame(err, null, 'No error is expected');
-  } finally {
-    await kill({});
+    deepEqual(err, null, 'No error is expected');
   }
 
-  return end();
+  await kill({});
+
+  return;
 });

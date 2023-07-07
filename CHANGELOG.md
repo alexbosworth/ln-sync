@@ -1,6 +1,6 @@
 # Versions
 
-## 5.2.2
+## 5.2.3
 
 - `getMaxFundAmount`: Fix getting max amount when selected input is unconfirmed
 

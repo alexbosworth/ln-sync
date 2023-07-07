@@ -1,4 +1,5 @@
-const {test} = require('@alexbosworth/tap');
+const {equal} = require('node:assert').strict;
+const test = require('node:test');
 
 const {formatTokens} = require('./../../');
 
@@ -38,7 +39,7 @@ const tests = [
 ];
 
 tests.forEach(({args, description, expected}) => {
-  return test(description, ({end, equal}) => {
+  return test(description, (t, end) => {
     const {display} = formatTokens(args);
 
     equal(asHex(display), expected, 'Got expected display value');
