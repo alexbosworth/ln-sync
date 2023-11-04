@@ -10,6 +10,7 @@ const {returnResult} = require('asyncjs-util');
     [cooperative_close_address]: <Restrict Coop Close To Address String>
     [give_tokens]: <Tokens to Gift To Partner Number> // Defaults to zero
     [is_private]: <Channel is Private Bool> // Defaults to false
+    [is_simplified_taproot]: <Channel is Simplified Taproot Type Bool>
     [is_trusted_funding]: <Peer Should Avoid Waiting For Confirmation Bool>
     lnd: <Authenticated LND API Object>
     [min_htlc_mtokens]: <Minimum HTLC Millitokens String>
@@ -51,6 +52,7 @@ module.exports = (args, cbk) => {
             give_tokens: args.give_tokens,
             is_private: args.is_private,
             is_trusted_funding: args.is_trusted_funding,
+            is_simplified_taproot: args.is_simplified_taproot,
             min_htlc_mtokens: args.min_htlc_mtokens,
             partner_csv_delay: args.partner_csv_delay,
             partner_public_key: args.partner_public_key,

@@ -5,23 +5,23 @@
   },
   "description": "LN metadata persistence methods",
   "dependencies": {
-    "async": "3.2.4",
+    "async": "3.2.5",
     "asyncjs-util": "1.2.12",
     "bech32": "2.0.0",
-    "bitcoinjs-lib": "6.1.3",
+    "bitcoinjs-lib": "6.1.5",
     "bolt07": "1.8.4",
     "colorette": "2.0.20",
     "ecpair": "2.1.0",
-    "ln-service": "56.8.0",
+    "ln-service": "57.1.0",
     "psbt": "3.0.0",
     "tiny-secp256k1": "2.2.3"
   },
   "devDependencies": {
-    "ln-docker-daemons": "5.1.0",
+    "ln-docker-daemons": "6.0.3",
     "mock-lnd": "1.4.4"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "keywords": [
     "lnd",
@@ -39,5 +39,5 @@
     "integration-tests": "node test/integration",
     "test": "npx nyc@15.1 node --experimental-test-coverage --test test/chain/*.js test/display/*.js test/funding/*.js test/graph/*.js test/nodes/*.js test/peers/*.js"
   },
-  "version": "5.2.3"
+  "version": "6.0.0"
 }

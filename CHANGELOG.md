@@ -1,5 +1,13 @@
 # Versions
 
+## 6.0.0
+
+- `acceptsChannelOpen`: Add `is_simplified_taproot` option for p2tr channels
+
+### Breaking Changes
+
+- End support for Node.js 16, require Node.js 18 or higher
+
 ## 5.2.3
 
 - `getMaxFundAmount`: Fix getting max amount when selected input is unconfirmed
