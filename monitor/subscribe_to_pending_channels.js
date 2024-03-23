@@ -22,6 +22,8 @@ const sumOf = arr => arr.reduce((sum, n) => sum + n, Number());
   {
     channels: [{
       capacity: <Channel Capacity Tokens Number>
+      [close_transaction]: <Channel Closing Raw Transaction Hex String>
+      [close_transaction_id]: <Channel Closing Transaction Id String>
       is_partner_initiated: <Channel Partner Initiated Channel Bool>
       [is_private]: <Channel Is Not Announced Bool>
       partner_public_key: <Channel Peer Public Key String>
