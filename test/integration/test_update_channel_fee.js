@@ -25,6 +25,8 @@ return test('Update a channel fee', async () => {
     base_fee_mtokens: '2000',
     cltv_delta: 144,
     fee_rate: 1000,
+    inbound_base_discount_mtokens: '0',
+    inbound_rate_discount: 0,
     is_disabled: false,
     max_htlc_mtokens: '1000000',
     min_htlc_mtokens: '10000',

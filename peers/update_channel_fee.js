@@ -118,6 +118,8 @@ module.exports = (args, cbk) => {
           base_fee_mtokens: args.base_fee_mtokens || policy.base_fee_mtokens,
           cltv_delta: args.cltv_delta || policy.cltv_delta,
           fee_rate: isFeeRateAdjusted ? args.fee_rate : policy.fee_rate,
+          inbound_base_discount_mtokens: policy.inbound_base_discount_mtokens,
+          inbound_rate_discount: policy.inbound_rate_discount,
           lnd: args.lnd,
           max_htlc_mtokens: args.max_htlc_mtokens || policy.max_htlc_mtokens,
           min_htlc_mtokens: args.min_htlc_mtokens || policy.min_htlc_mtokens,
