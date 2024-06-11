@@ -1,6 +1,6 @@
 # Versions
 
-## 6.0.3
+## 6.0.4
 
 - `acceptsChannelOpen`: Add `is_simplified_taproot` option for p2tr channels
 
