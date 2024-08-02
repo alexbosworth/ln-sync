@@ -1,5 +1,9 @@
 # Versions
 
+## 6.1.0
+
+- `updateChannelFees`: Add support for `inbound_rate_discount` for PPM discount
+
 ## 6.0.4
 
 - `acceptsChannelOpen`: Add `is_simplified_taproot` option for p2tr channels
