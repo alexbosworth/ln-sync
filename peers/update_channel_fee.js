@@ -16,7 +16,7 @@ const feeRateBuffer = 1;
     [cltv_delta]: <CLTV Delta to Use Number>
     fee_rate: <Fee Rate Number>
     from: <Local Node Public Key Hex String>
-    [inbound_rate_discount]: <Inbound Rate Discount Number>
+    [inbound_rate_discount]: <Source Based PPM Fee Rate Discount Number>
     lnd: <Authenticated LND API Object>
     [max_htlc_mtokens]: <Maximum HTLC Millitokens to Forward String>
     [min_htlc_mtokens]: <Minimum HTLC Millitokens to Forward String>
@@ -111,17 +111,26 @@ module.exports = (args, cbk) => {
         return cbk(null, rate);
       }],
 
+      // Determine what inbound rate discount should be applied
+      inbound: ['policy', ({policy}, cbk) => {
+        // Exit early with existing when there was no change to inbound rate
+        if (args.inbound_rate_discount === undefined) {
+          return cbk(null, {rate_discount: policy.inbound_rate_discount});
+        }
+
+        return cbk(null, {rate_discount: args.inbound_rate_discount});
+      }],
+
       // Update the fee rate to the specified rate
-      updateFeeRate: ['policy', ({policy}, cbk) => {
+      updateFeeRate: ['inbound', 'policy', ({inbound, policy}, cbk) => {
         const isFeeRateAdjusted = args.fee_rate !== undefined;
-        const isInboundRateDiscountAdjusted = args.inbound_rate_discount !== undefined;
 
         return updateRoutingFees({
           base_fee_mtokens: args.base_fee_mtokens || policy.base_fee_mtokens,
           cltv_delta: args.cltv_delta || policy.cltv_delta,
           fee_rate: isFeeRateAdjusted ? args.fee_rate : policy.fee_rate,
           inbound_base_discount_mtokens: policy.inbound_base_discount_mtokens,
-          inbound_rate_discount: isInboundRateDiscountAdjusted ? args.inbound_rate_discount : policy.inbound_rate_discount,
+          inbound_rate_discount: inbound.rate_discount,
           lnd: args.lnd,
           max_htlc_mtokens: args.max_htlc_mtokens || policy.max_htlc_mtokens,
           min_htlc_mtokens: args.min_htlc_mtokens || policy.min_htlc_mtokens,
@@ -141,8 +150,10 @@ module.exports = (args, cbk) => {
         const hasBaseFee = args.base_fee_mtokens !== undefined;
         const hasCltvDelta = !!args.cltv_delta;
         const hasFeeRate = args.fee_rate !== undefined;
-        const hasInboundRateDiscount = args.inbound_rate_discount !== undefined;
+        const hasInboundRate = args.inbound_rate_discount !== undefined;
         const rate = getUpdated.policies.find(n => n.public_key === args.from);
+
+        const inboundRate = rate.inbound_rate_discount;
 
         if (hasBaseFee && rate.base_fee_mtokens !== args.base_fee_mtokens) {
           return cbk([503, 'FailedToUpdateChannelPolicyToNewBaseFee']);
@@ -156,8 +167,8 @@ module.exports = (args, cbk) => {
           return cbk([503, 'FailedToUpdateChannelPolicyToNewFeeRate', {rate}]);
         }
 
-        if (hasInboundRateDiscount && rate.inbound_rate_discount !== args.inbound_rate_discount) {
-          return cbk([503, 'FailedToUpdateInboundRateDiscountToNewInboundRateDiscount']);
+        if (hasInboundRate && inboundRate !== args.inbound_rate_discount) {
+          return cbk([503, 'FailedToUpdateInboundDiscountToNewRateDiscount']);
         }
 
         return cbk();

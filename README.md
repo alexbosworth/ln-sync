@@ -667,6 +667,7 @@ Update the fee for an individual channel
       [cltv_delta]: <CLTV Delta to Use Number>
       fee_rate: <Fee Rate Number>
       from: <Local Node Public Key Hex String>
+      [inbound_rate_discount]: <Source Based PPM Fee Rate Discount Number>
       lnd: <Authenticated LND API Object>
       [max_htlc_mtokens]: <Maximum HTLC Millitokens to Forward String>
       [min_htlc_mtokens]: <Minimum HTLC Millitokens to Forward String>

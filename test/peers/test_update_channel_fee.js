@@ -168,6 +168,11 @@ const tests = [
     error: [503, 'ChannelToSetFeeRateForIsStillPending'],
   },
   {
+    args: makeArgs({inbound_rate_discount: 100}),
+    description: 'Fee rate checks when an inbound discount is not applied',
+    error: [503, 'FailedToUpdateInboundDiscountToNewRateDiscount'],
+  },
+  {
     args: makeArgs({}),
     description: 'Fee rate is updated',
   },
