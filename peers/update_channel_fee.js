@@ -16,6 +16,7 @@ const feeRateBuffer = 1;
     [cltv_delta]: <CLTV Delta to Use Number>
     fee_rate: <Fee Rate Number>
     from: <Local Node Public Key Hex String>
+    [inbound_rate_discount]: <Inbound Rate Discount Number>
     lnd: <Authenticated LND API Object>
     [max_htlc_mtokens]: <Maximum HTLC Millitokens to Forward String>
     [min_htlc_mtokens]: <Minimum HTLC Millitokens to Forward String>
@@ -113,13 +114,14 @@ module.exports = (args, cbk) => {
       // Update the fee rate to the specified rate
       updateFeeRate: ['policy', ({policy}, cbk) => {
         const isFeeRateAdjusted = args.fee_rate !== undefined;
+        const isInboundRateDiscountAdjusted = args.inbound_rate_discount !== undefined;
 
         return updateRoutingFees({
           base_fee_mtokens: args.base_fee_mtokens || policy.base_fee_mtokens,
           cltv_delta: args.cltv_delta || policy.cltv_delta,
           fee_rate: isFeeRateAdjusted ? args.fee_rate : policy.fee_rate,
           inbound_base_discount_mtokens: policy.inbound_base_discount_mtokens,
-          inbound_rate_discount: policy.inbound_rate_discount,
+          inbound_rate_discount: isInboundRateDiscountAdjusted ? args.inbound_rate_discount : policy.inbound_rate_discount,
           lnd: args.lnd,
           max_htlc_mtokens: args.max_htlc_mtokens || policy.max_htlc_mtokens,
           min_htlc_mtokens: args.min_htlc_mtokens || policy.min_htlc_mtokens,
@@ -139,6 +141,7 @@ module.exports = (args, cbk) => {
         const hasBaseFee = args.base_fee_mtokens !== undefined;
         const hasCltvDelta = !!args.cltv_delta;
         const hasFeeRate = args.fee_rate !== undefined;
+        const hasInboundRateDiscount = args.inbound_rate_discount !== undefined;
         const rate = getUpdated.policies.find(n => n.public_key === args.from);
 
         if (hasBaseFee && rate.base_fee_mtokens !== args.base_fee_mtokens) {
@@ -151,6 +154,10 @@ module.exports = (args, cbk) => {
 
         if (hasFeeRate && abs(rate.fee_rate - args.fee_rate) > feeRateBuffer) {
           return cbk([503, 'FailedToUpdateChannelPolicyToNewFeeRate', {rate}]);
+        }
+
+        if (hasInboundRateDiscount && rate.inbound_rate_discount !== args.inbound_rate_discount) {
+          return cbk([503, 'FailedToUpdateInboundRateDiscountToNewInboundRateDiscount']);
         }
 
         return cbk();

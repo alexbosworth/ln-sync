@@ -12,7 +12,7 @@
     "bolt07": "1.9.3",
     "colorette": "2.0.20",
     "ecpair": "2.1.0",
-    "ln-service": "57.14.2",
+    "ln-service": "57.16.0",
     "psbt": "3.0.0",
     "tiny-secp256k1": "2.2.3"
   },
