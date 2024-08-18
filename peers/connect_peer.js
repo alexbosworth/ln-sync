@@ -6,6 +6,7 @@ const {getPeers} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const defaultRetryDelayMs = 1;
+const {isArray} = Array;
 const isPublicKey = n => !!n && /^[0-9A-F]{66}$/i.test(n);
 
 /** Connect a peer
@@ -59,7 +60,7 @@ module.exports = ({id, lnd, sockets}, cbk) => {
         }
 
         // Exit early when sockets are provided
-        if (!!sockets && !!sockets.length) {
+        if (!!sockets && !!isArray(sockets) && !!sockets.length) {
           return cbk(null, {sockets});
         }
 
