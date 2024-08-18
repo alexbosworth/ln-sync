@@ -33,7 +33,6 @@ module.exports = ({id, lnd, sockets}, cbk) => {
         }
 
         if (!!sockets && (!isArray(sockets) || !sockets.length)) { 
-          console.log(sockets)
           return cbk([400, 'ExpectedArrayOfSocketsToConnectAsPeer']);
         }
 
