@@ -73,7 +73,7 @@ module.exports = ({id, lnd, sockets}, cbk) => {
         }
 
         if (!getNodeInfo.sockets.length) {
-          return cbk([404, 'FailedToFindNodeToConnectTo']);
+          return cbk([404, 'NoKnownSocketsForNodeToConnectTo']);
         }
 
         return {sockets: getNodeInfo.sockets.map(n => n.socket)};
