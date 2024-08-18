@@ -32,6 +32,11 @@ module.exports = ({id, lnd, sockets}, cbk) => {
           return cbk([400, 'ExpectedAuthenticatedLndToConnectPeer']);
         }
 
+        if (!!sockets && (!isArray(sockets) || !sockets.length)) { 
+          console.log(sockets)
+          return cbk([400, 'ExpectedArrayOfSocketsToConnectAsPeer']);
+        }
+
         return cbk();
       },
 
@@ -60,16 +65,15 @@ module.exports = ({id, lnd, sockets}, cbk) => {
         }
 
         // Exit early when sockets are provided
-        if (!!sockets && !!isArray(sockets) && !!sockets.length) {
+        if (!!sockets) {
           return cbk(null, {sockets});
         }
-
 
         if (!isExistingPeer && !getNodeInfo) {
           return cbk([404, 'FailedToFindNodeToConnectTo']);
         }
 
-        return {sockets: getNodeInfo.sockets};
+        return {sockets: getNodeInfo.sockets.map(n => n.socket)};
       }],
 
       // Connect to the node if not already connected
