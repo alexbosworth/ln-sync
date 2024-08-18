@@ -13,11 +13,12 @@ const isPublicKey = n => !!n && /^[0-9A-F]{66}$/i.test(n);
   {
     id: <Node Public Key Hex String>
     lnd: <Authenticated LND API Object>
+    [sockets]: [<Host Network Address And Optional Port String>]
   }
 
   @returns via cbk or Promise
 */
-module.exports = ({id, lnd}, cbk) => {
+module.exports = ({id, lnd, sockets}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
       // Check arguments
@@ -33,22 +34,41 @@ module.exports = ({id, lnd}, cbk) => {
         return cbk();
       },
 
+      // Get node
+      getNodeInfo: ['validate', ({}, cbk) => {
+        return getNode({lnd, is_omitting_channels: true, public_key: id}, (err, res) => {
+          // Ignore errors, node may not be found
+          if (!!err) {
+            return cbk();
+          }
+
+          return cbk(null, res);
+        });
+      }],
+
       // Get already connected peers
       getPeers: ['validate', ({}, cbk) => getPeers({lnd}, cbk)],
 
       // Get the node sockets if necessary to conneect
-      getSockets: ['getPeers', ({getPeers}, cbk) => {
+      getSockets: ['getNodeInfo', 'getPeers', ({getNodeInfo, getPeers}, cbk) => {
+        const isExistingPeer = getPeers.peers.map(n => n.public_key).includes(id);
+
         // Exit early when there is no need to connect to the node
-        if (getPeers.peers.map(n => n.public_key).includes(id)) {
+        if (!!isExistingPeer) {
           return cbk();
         }
 
-        return getNode({
-          lnd,
-          is_omitting_channels: true,
-          public_key: id,
-        },
-        cbk);
+        // Exit early when sockets are provided
+        if (!!sockets && !!sockets.length) {
+          return cbk(null, {sockets});
+        }
+
+
+        if (!isExistingPeer && !getNodeInfo) {
+          return cbk([404, 'FailedToFindNodeToConnectTo']);
+        }
+
+        return {sockets: getNodeInfo.sockets};
       }],
 
       // Connect to the node if not already connected
@@ -58,7 +78,7 @@ module.exports = ({id, lnd}, cbk) => {
           return cbk();
         }
 
-        return asyncDetectSeries(getSockets.sockets, ({socket}, cbk) => {
+        return asyncDetectSeries(getSockets.sockets, (socket, cbk) => {
           return addPeer({
             lnd,
             socket,
