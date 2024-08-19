@@ -1,5 +1,9 @@
 # Versions
 
+## 6.2.0
+
+- `connectPeer`: Add `sockets` to specify peer sockets to connect to
+
 ## 6.1.0
 
 - `updateChannelFees`: Add support for `inbound_rate_discount` for PPM discount

@@ -12,13 +12,13 @@
     "bolt07": "1.9.4",
     "colorette": "2.0.20",
     "ecpair": "2.1.0",
-    "ln-service": "57.16.0",
+    "ln-service": "57.18.0",
     "psbt": "3.0.0",
     "tiny-secp256k1": "2.2.3"
   },
   "devDependencies": {
-    "ln-docker-daemons": "6.0.21",
-    "mock-lnd": "1.4.4"
+    "ln-docker-daemons": "6.0.22",
+    "mock-lnd": "2.0.0"
   },
   "engines": {
     "node": ">=18"
@@ -37,7 +37,7 @@
   },
   "scripts": {
     "integration-tests": "node test/integration",
-    "test": "npx nyc@15.1 node --experimental-test-coverage --test test/chain/*.js test/display/*.js test/funding/*.js test/graph/*.js test/nodes/*.js test/peers/*.js"
+    "test": "npx nyc@17.0.0 node --experimental-test-coverage --test test/chain/*.js test/display/*.js test/funding/*.js test/graph/*.js test/nodes/*.js test/peers/*.js"
   },
-  "version": "6.1.0"
+  "version": "6.2.0"
 }

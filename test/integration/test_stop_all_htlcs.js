@@ -35,6 +35,8 @@ return test('Stop all HTLCs', async () => {
   await generate({count: maturity});
 
   await asyncRetry({interval, times}, async () => {
+    await generate({});
+
     const hashes = await asyncMap([lnd, target.lnd, remote.lnd], async n => {
       return (await getHeight({lnd: n})).current_block_hash;
     });
