@@ -25,7 +25,7 @@ const peers = [{
 
 const unconnectableNodeId = makePublicKey();
 
-const makeLnd = () => {
+const makeLnd = ({addresses}) => {
   return {
     default: {
       connectPeer: ({addr}, cbk) => {
@@ -53,7 +53,7 @@ const makeLnd = () => {
       getNodeInfo: ({}, cbk) => cbk(null, {
         channels: [],
         node: {
-          addresses: [{addr: 'addr', network: 'network'}],
+          addresses: addresses || [{addr: 'addr', network: 'network'}],
           alias: 'alias',
           color: '#000000',
           features: {},
@@ -80,13 +80,28 @@ const tests = [
     error: [400, 'ExpectedAuthenticatedLndToConnectPeer'],
   },
   {
+    args: {id: makePublicKey(), lnd: makeLnd({}), sockets: []},
+    description: 'A non empty sockets array is required',
+    error: [400, 'ExpectedNonEmptyArrayOfSocketsToConnectAsPeer'],
+  },
+  {
     args: {id: unconnectableNodeId, lnd: makeLnd({})},
     description: 'Cannot connect to peer',
     error: [503, 'FailedToConnectToPeer'],
   },
   {
+    args: {id: makePublicKey(), lnd: makeLnd({addresses: []})},
+    description: 'Node has no sockets',
+    error: [404, 'NoKnownSocketsForNodeToConnectTo'],
+  },
+  {
     args: {id: makePublicKey(), lnd: makeLnd({})},
     description: 'Peer is connected',
+    expected: {},
+  },
+  {
+    args: {id: makePublicKey(), lnd: makeLnd({}), sockets: ['0:1']},
+    description: 'Socket is specified',
     expected: {},
   },
   {

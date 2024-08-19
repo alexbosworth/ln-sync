@@ -62,6 +62,7 @@ Connect a peer
     {
       id: <Node Public Key Hex String>
       lnd: <Authenticated LND API Object>
+      [sockets]: [<Host Network Address And Optional Port String>]
     }
 
     @returns via cbk or Promise

@@ -32,61 +32,53 @@ module.exports = ({id, lnd, sockets}, cbk) => {
           return cbk([400, 'ExpectedAuthenticatedLndToConnectPeer']);
         }
 
-        if (!!sockets && (!isArray(sockets) || !sockets.length)) { 
-          return cbk([400, 'ExpectedArrayOfSocketsToConnectAsPeer']);
+        if (!!sockets && (!isArray(sockets) || !sockets.length)) {
+          return cbk([400, 'ExpectedNonEmptyArrayOfSocketsToConnectAsPeer']);
         }
 
         return cbk();
       },
 
-      // Get node
-      getNodeInfo: ['validate', ({}, cbk) => {
-        return getNode({lnd, is_omitting_channels: true, public_key: id}, (err, res) => {
-          // Ignore errors, node may not be found
-          if (!!err) {
-            return cbk();
-          }
-
-          return cbk(null, res);
-        });
-      }],
-
-      // Get already connected peers
+      // Get already connected peers to see if the peer is already connected
       getPeers: ['validate', ({}, cbk) => getPeers({lnd}, cbk)],
 
-      // Get the node sockets if necessary to conneect
-      getSockets: ['getNodeInfo', 'getPeers', ({getNodeInfo, getPeers}, cbk) => {
-        const isExistingPeer = getPeers.peers.map(n => n.public_key).includes(id);
+      // Determine if the peer is already connected
+      isConnected: ['getPeers', ({getPeers}, cbk) => {
+        return cbk(null, getPeers.peers.map(n => n.public_key).includes(id));
+      }],
 
-        // Exit early when there is no need to connect to the node
-        if (!!isExistingPeer) {
+      // Get the sockets to connect to the node
+      getSockets: ['isConnected', ({isConnected}, cbk) => {
+        // Exit early when node is already connected as a peer
+        if (!!isConnected) {
           return cbk();
         }
 
-        // Exit early when sockets are provided
+        // Exit early when sockets are already specified
         if (!!sockets) {
-          return cbk(null, {sockets});
+          return cbk(null, {sockets: sockets.map(socket => ({socket}))});
         }
 
-        if (!isExistingPeer && !getNodeInfo) {
-          return cbk([404, 'FailedToFindNodeToConnectTo']);
-        }
-
-        if (!getNodeInfo.sockets.length) {
-          return cbk([404, 'NoKnownSocketsForNodeToConnectTo']);
-        }
-
-        return {sockets: getNodeInfo.sockets.map(n => n.socket)};
+        return getNode({
+          lnd,
+          is_omitting_channels: true,
+          public_key: id,
+        },
+        cbk);
       }],
 
       // Connect to the node if not already connected
       connect: ['getSockets', ({getSockets}, cbk) => {
-        // Exit early when there is no node to connect to
+        // Exit early when there are no sockets to connect to
         if (!getSockets) {
           return cbk();
         }
 
-        return asyncDetectSeries(getSockets.sockets, (socket, cbk) => {
+        if (!getSockets.sockets.length) {
+          return cbk([404, 'NoKnownSocketsForNodeToConnectTo']);
+        }
+
+        return asyncDetectSeries(getSockets.sockets, ({socket}, cbk) => {
           return addPeer({
             lnd,
             socket,
