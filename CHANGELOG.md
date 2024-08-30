@@ -1,5 +1,9 @@
 # Versions
 
+## 6.3.0
+
+- `signAndFundPsbt`: Add method to partially sign and fund a PSBT
+
 ## 6.2.0
 
 - `connectPeer`: Add `sockets` to specify peer sockets to connect to

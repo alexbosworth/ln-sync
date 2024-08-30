@@ -23,6 +23,7 @@ const {getTransactionRecord} = require('./chain');
 const {getTransitRefund} = require('./funding');
 const {maintainUtxoLocks} = require('./funding');
 const {reserveTransitFunds} = require('./funding');
+const {signAndFundPsbt} = require('./chain');
 const {stopAllHtlcs} = require('./peers');
 const {subscribeToPendingChannels} = require('./monitor');
 const {updateChannelFee} = require('./peers');
@@ -55,6 +56,7 @@ module.exports = {
   getTransitRefund,
   maintainUtxoLocks,
   reserveTransitFunds,
+  signAndFundPsbt,
   stopAllHtlcs,
   subscribeToPendingChannels,
   updateChannelFee,

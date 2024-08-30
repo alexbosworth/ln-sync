@@ -659,6 +659,41 @@ Get on-chain funding and a refund
       vout: <Funds Reserved At Output Index Number>
     }
 
+### `signAndFundPsbt`
+
+Partially sign and fund a PSBT and create a conflicting transaction
+
+Only P2TR and P2WPKH inputs are supported
+
+To allow for funding a channel, a dummy "finalized" PSBT is returned
+
+    {
+      lnd: <Authenticated Signing LND API Object>
+      psbt: <Base Funding With Bare Inputs PSBT Hex String>
+      utxos: [{
+        bip32_derivations: [{
+          fingerprint: <Public Key Fingerprint Hex String>
+          [leaf_hashes]: <Taproot Leaf Hash Hex String>
+          path: <BIP 32 Child / Hardened Child / Index Derivation Path String>
+          public_key: <Public Key Hex String>
+        }]
+        [non_witness_utxo]: <UTXO Spending Transaction Hex String>
+        transaction_id: <Unspent Transaction Id Hex String>
+        transaction_vout: <Unspent Transaction Output Index Number>
+        witness_utxo: {
+          script_pub: <UTXO Output Script Hex String>
+          tokens: <UTXO Tokens Value Number>
+        }
+      }]
+    }
+
+    @returns via cbk or Promise
+    {
+      conflict: <Conflict Transaction Hex String>
+      funding: <Funding Dummy PSBT Hex String>
+      psbt: <Partially Signed PSBT Hex String>
+    }
+
 ### `updateChannelFee`
 
 Update the fee for an individual channel
