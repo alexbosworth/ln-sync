@@ -1,5 +1,9 @@
 # Versions
 
+## 6.4.0
+
+- `assembleUnsignedPsbt`: Add method to construct an unsigned shared PSBT
+
 ## 6.3.0
 
 - `signAndFundPsbt`: Add method to partially sign and fund a PSBT

@@ -39,6 +39,33 @@ Ask to get a chain fee rate
       tokens_per_vbyte: <Chain Fee Tokens Per VByte Number>
     }
 
+### `assembleUnsignedPsbt`
+
+Assemble an unsigned PSBT with funding from multiple parties
+
+    {
+      capacity: <Channel Capacity Tokens Number>
+      proposed: [{
+        [change]: <Change Output Hex String>
+        [funding]: [<Funding Output Hex String>]
+        utxos: [{
+          [non_witness_utxo]: <Spending Transaction Hex String>
+          transaction_id: <Transaction Id Hex String>
+          transaction_vout: <Transaction Output Index Number>
+          witness_utxo: {
+            script_pub: <Witness Output Script Hex String>
+            tokens: <Tokens Number>
+          }
+        }]
+      }]
+      rate: <Fee Rate Number>
+    }
+
+    @returns via cbk or Promise
+    {
+      psbt: <Unsigned Funding Transaction PSBT Hex String>
+    }
+
 ### `broadcastTransaction`
 
 Broadcast a chain transaction until it gets confirmed in a block

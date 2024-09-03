@@ -1,5 +1,6 @@
 const {acceptsChannelOpen} = require('./peers');
 const {askForFeeRate} = require('./funding');
+const {assembleUnsignedPsbt} = require('./funding');
 const {broadcastTransaction} = require('./chain');
 const {connectPeer} = require('./peers');
 const {enforceForwardRequestRules} = require('./monitor');
@@ -33,6 +34,7 @@ const {waitForPendingOpen} = require('./peers');
 module.exports = {
   acceptsChannelOpen,
   askForFeeRate,
+  assembleUnsignedPsbt,
   broadcastTransaction,
   connectPeer,
   enforceForwardRequestRules,
