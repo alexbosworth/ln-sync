@@ -1,6 +1,6 @@
 # Versions
 
-## 6.4.0
+## 6.4.1
 
 - `assembleUnsignedPsbt`: Add method to construct an unsigned shared PSBT
 

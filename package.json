@@ -8,16 +8,16 @@
     "async": "3.2.6",
     "asyncjs-util": "1.2.12",
     "bech32": "2.0.0",
-    "bitcoinjs-lib": "6.1.6",
+    "bitcoinjs-lib": "6.1.7",
     "bolt07": "1.9.4",
     "colorette": "2.0.20",
     "ecpair": "2.1.0",
-    "ln-service": "57.19.0",
+    "ln-service": "57.24.0",
     "psbt": "3.0.0",
     "tiny-secp256k1": "2.2.3"
   },
   "devDependencies": {
-    "ln-docker-daemons": "6.0.23",
+    "ln-docker-daemons": "6.0.25",
     "mock-lnd": "2.0.0"
   },
   "engines": {
@@ -37,7 +37,7 @@
   },
   "scripts": {
     "integration-tests": "node test/integration",
-    "test": "npx nyc@17.0.0 node --experimental-test-coverage --test test/chain/*.js test/display/*.js test/funding/*.js test/graph/*.js test/nodes/*.js test/peers/*.js"
+    "test": "npx nyc@17.1.0 node --experimental-test-coverage --test test/chain/*.js test/display/*.js test/funding/*.js test/graph/*.js test/nodes/*.js test/peers/*.js"
   },
-  "version": "6.4.0"
+  "version": "6.4.1"
 }
