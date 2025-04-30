@@ -17,7 +17,7 @@
     "tiny-secp256k1": "2.2.3"
   },
   "devDependencies": {
-    "ln-docker-daemons": "6.0.23",
+    "ln-docker-daemons": "6.0.25",
     "mock-lnd": "2.0.0"
   },
   "engines": {
