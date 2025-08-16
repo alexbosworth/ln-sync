@@ -4,7 +4,7 @@ const {returnResult} = require('asyncjs-util');
 
 const {chains} = require('./networks');
 
-const bjNames = {btc: 'bitcoin', btctestnet: 'testnet', btcregtest: 'regtest'};
+const bjNames = {btc: 'bitcoin', btcregtest: 'regtest', btcsignet: 'signet', btctestnet: 'testnet'};
 const {keys} = Object;
 const reversedBytes = hex => Buffer.from(hex, 'hex').reverse().toString('hex');
 
