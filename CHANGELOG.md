@@ -1,5 +1,9 @@
 # Versions
 
+## 6.5.0
+
+- `getNetwork`: Add support for signet and testnet4
+
 ## 6.4.3
 
 - `assembleUnsignedPsbt`: Add method to construct an unsigned shared PSBT
