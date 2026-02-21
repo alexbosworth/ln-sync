@@ -1,5 +1,11 @@
 # Versions
 
+## 7.0.0
+
+### Breaking Changes
+
+- End support for Node.js 18, require Node.js 20 or higher
+
 ## 6.5.2
 
 - `getNetwork`: Add support for signet and testnet4
