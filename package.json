@@ -12,16 +12,16 @@
     "bolt07": "1.9.5",
     "colorette": "2.0.20",
     "ecpair": "2.1.0",
-    "ln-service": "58.1.0",
+    "ln-service": "59.0.0",
     "psbt": "5.0.0",
     "tiny-secp256k1": "2.2.4"
   },
   "devDependencies": {
-    "ln-docker-daemons": "7.0.2",
+    "ln-docker-daemons": "8.0.0",
     "mock-lnd": "3.0.0"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "keywords": [
     "lnd",
@@ -39,5 +39,5 @@
     "integration-tests": "node test/integration",
     "test": "npx nyc@17.1.0 node --experimental-test-coverage --test test/chain/*.js test/display/*.js test/funding/*.js test/graph/*.js test/nodes/*.js test/peers/*.js"
   },
-  "version": "7.0.2"
+  "version": "8.0.0"
 }

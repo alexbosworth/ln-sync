@@ -1,5 +1,11 @@
 # Versions
 
+## 8.0.0
+
+### Breaking Changes
+
+- End support for Node.js 20, require Node.js 22 or higher
+
 ## 7.0.2
 
 ### Breaking Changes
