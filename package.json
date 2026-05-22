@@ -12,7 +12,9 @@
     "bolt07": "1.9.5",
     "colorette": "2.0.20",
     "ecpair": "2.1.0",
-    "ln-service": "59.0.1",
+    "i": "^0.3.7",
+    "ln-service": "59.0.3",
+    "npm": "^11.15.0",
     "psbt": "5.0.0",
     "tiny-secp256k1": "2.2.4"
   },
@@ -39,5 +41,5 @@
     "integration-tests": "node test/integration",
     "test": "npx nyc@17.1.0 node --experimental-test-coverage --test test/chain/*.js test/display/*.js test/funding/*.js test/graph/*.js test/nodes/*.js test/peers/*.js"
   },
-  "version": "8.0.1"
+  "version": "8.0.2"
 }
