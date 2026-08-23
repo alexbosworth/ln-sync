@@ -1,6 +1,6 @@
 # Versions
 
-## 8.0.4
+## 8.0.5
 
 ### Breaking Changes
 
