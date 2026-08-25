@@ -1,9 +1,8 @@
-const {Transaction} = require('bitcoinjs-lib');
+const {componentsOfTransaction} = require('@alexbosworth/blockchain');
 
 const inputAsOutpoint = (txId, outputIndex) => `${txId}:${outputIndex}`;
-const {fromHex} = Transaction;
 const sumOf = arr => arr.reduce((sum, n) => sum + n, Number());
-const txIdFromHash = hash => hash.slice().reverse().toString('hex');
+const txComponents = transaction => componentsOfTransaction({transaction});
 const uniq = arr => Array.from(new Set(arr));
 
 /** Derive conflicted on-chain pending balances where funds are double spent or
@@ -42,8 +41,8 @@ module.exports = ({transactions, utxos}) => {
     }
 
     // Register all the inputs into the spends map
-    return fromHex(tx.transaction).ins.forEach(input => {
-      const outpoint = inputAsOutpoint(txIdFromHash(input.hash), input.index);
+    return txComponents(tx.transaction).inputs.forEach(input => {
+      const outpoint = inputAsOutpoint(input.id, input.vout);
 
       const existing = spends[outpoint];
 
@@ -67,8 +66,8 @@ module.exports = ({transactions, utxos}) => {
     }
 
     // Look for pending inputs that are conflicted with a confirmed tx
-    return fromHex(tx.transaction).ins.forEach(input => {
-      const outpoint = inputAsOutpoint(txIdFromHash(input.hash), input.index);
+    return txComponents(tx.transaction).inputs.forEach(input => {
+      const outpoint = inputAsOutpoint(input.id, input.vout);
 
       // Exit early when nothing pending spends this outpoint
       if (!spends[outpoint]) {

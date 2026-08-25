@@ -1,11 +1,13 @@
 const asyncAuto = require('async/auto');
+const {componentsOfTransaction} = require('@alexbosworth/blockchain');
+const {idForTransaction} = require('@alexbosworth/blockchain');
 const {returnResult} = require('asyncjs-util');
 const {subscribeToChainAddress} = require('ln-service');
-const {Transaction} = require('bitcoinjs-lib');
 
+const coinbaseTxId = Buffer.alloc(32).toString('hex');
 const defaultMinConfirmations = 1;
-const {fromHex} = Transaction;
-const hexAsBuffer = hex => Buffer.from(hex, 'hex');
+const firstInput = tx => tx.inputs[0];
+const hasOneInput = tx => tx.inputs.length === 1;
 const notFoundIndex = -1;
 
 /** Find a confirmed on-chain output
@@ -81,12 +83,12 @@ module.exports = (args, cbk) => {
 
         // Wait for the confirmation of the tx paying to the output
         sub.on('confirmation', ({height, transaction}) => {
-          const outputScript = hexAsBuffer(args.output_script);
-          const tx = fromHex(transaction);
+          const outputScript = args.output_script.toLowerCase();
+          const tx = componentsOfTransaction({transaction});
 
           // Find the matching output
-          const vout = tx.outs.findIndex(({script, value}) => {
-            return value === args.tokens && script.equals(outputScript);
+          const vout = tx.outputs.findIndex(({script, tokens}) => {
+            return tokens === args.tokens && script === outputScript;
           });
 
           // Make sure the output was found
@@ -96,8 +98,8 @@ module.exports = (args, cbk) => {
 
           return done(null, {
             confirmation_height: height,
-            is_coinbase: tx.isCoinbase(),
-            transaction_id: tx.getId(),
+            is_coinbase: hasOneInput(tx) && firstInput(tx).id === coinbaseTxId,
+            transaction_id: idForTransaction({transaction}).id,
             transaction_vout: vout,
           });
         });

@@ -10,10 +10,10 @@
   },
   "description": "LN metadata persistence methods",
   "dependencies": {
+    "@alexbosworth/blockchain": "4.5.1",
     "async": "3.2.6",
     "asyncjs-util": "1.2.12",
     "bech32": "2.0.0",
-    "bitcoinjs-lib": "6.1.7",
     "bolt07": "2.0.0",
     "colorette": "2.0.20",
     "ecpair": "2.1.0",
@@ -44,5 +44,5 @@
     "integration-tests": "node test/integration",
     "test": "node --experimental-test-coverage --test test/chain/*.js test/display/*.js test/funding/*.js test/graph/*.js test/nodes/*.js test/peers/*.js"
   },
-  "version": "8.0.5"
+  "version": "8.0.6"
 }

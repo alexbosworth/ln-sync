@@ -2,9 +2,16 @@ const {deepEqual} = require('node:assert').strict;
 const {makeLnd} = require('mock-lnd');
 const {rejects} = require('node:assert').strict;
 const test = require('node:test');
-const {Transaction} = require('bitcoinjs-lib');
+const {transactionFromComponents} = require('@alexbosworth/blockchain');
 
 const {getFundedTransaction} = require('./../../');
+
+const emptyTransaction = transactionFromComponents({
+  inputs: [],
+  locktime: 0,
+  outputs: [],
+  version: 1,
+});
 
 const method = getFundedTransaction;
 
@@ -12,7 +19,7 @@ const makeArgs = overrides => {
   const args = {
     ask: ({}, cbk) => cbk({
       rate: 1,
-      fund: new Transaction().toHex(),
+      fund: emptyTransaction.transaction,
     }),
     lnd: makeLnd({}),
     logger: {info: () => {}},

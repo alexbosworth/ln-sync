@@ -1,6 +1,5 @@
-const {Transaction} = require('bitcoinjs-lib');
-
-const {fromHex} = Transaction;
+const {componentsOfTransaction} = require('@alexbosworth/blockchain');
+const {transactionFromComponents} = require('@alexbosworth/blockchain');
 
 /** Determine if a string can be decoded as a transaction
 
@@ -15,7 +14,12 @@ const {fromHex} = Transaction;
 */
 module.exports = ({input}) => {
   try {
-    return {is_transaction: !!fromHex(input)};
+    const components = componentsOfTransaction({transaction: input});
+
+    // Confirm the transaction encodes back to the input with no extra data
+    const {transaction} = transactionFromComponents(components);
+
+    return {is_transaction: transaction === input.toLowerCase()};
   } catch (e) {
     return {is_transaction: false};
   }

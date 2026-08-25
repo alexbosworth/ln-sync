@@ -1,5 +1,3 @@
-const {address} = require('bitcoinjs-lib');
-
 const addressDatafromBech32 = require('./address_data_from_bech32');
 
 /** Determine if a string is bech32 encoded

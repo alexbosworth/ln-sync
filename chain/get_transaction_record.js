@@ -1,16 +1,15 @@
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
+const {componentsOfTransaction} = require('@alexbosworth/blockchain');
 const {getChainTransactions} = require('lightning/lnd_methods');
 const {getChannels} = require('lightning/lnd_methods');
 const {getClosedChannels} = require('lightning/lnd_methods');
 const {getNode} = require('lightning/lnd_methods');
 const {getPendingChannels} = require('lightning/lnd_methods');
 const {returnResult} = require('asyncjs-util');
-const {Transaction} = require('bitcoinjs-lib');
 
 const transactionRecords = require('./transaction_records');
 
-const {fromHex} = Transaction;
 const uniq = arr => Array.from(new Set(arr));
 
 /** Get LND internal record associated with a transaction id
@@ -315,14 +314,18 @@ module.exports = (args, cbk) => {
         }
 
         if (!!tx && !!tx.transaction) {
-          fromHex(tx.transaction).ins.forEach(({hash, index}) => {
+          const {transaction} = tx;
+
+          const {inputs} = componentsOfTransaction({transaction});
+
+          inputs.forEach(({id, vout}) => {
             const txRecords = transactionRecords({
+              id,
+              vout,
               ended: getClosed.channels,
-              id: hash.reverse().toString('hex'),
               original: args.id,
               pending: getPending.pending_channels,
               txs: getTx.transactions,
-              vout: index,
             });
 
             txRecords.records.forEach(record => records.push(record));
@@ -367,8 +370,8 @@ module.exports = (args, cbk) => {
         };
       }],
 
-      // Record details
-      details: ['record', ({record}, cbk) => {
+      // Get the aliases of nodes in related channels
+      getAliases: ['record', ({record}, cbk) => {
         const keys = uniq(record.related_channels.map(n => n.with));
 
         return asyncMap(keys, (key, cbk) => {
@@ -386,27 +389,28 @@ module.exports = (args, cbk) => {
             return cbk(null, {alias: res.alias, public_key: key});
           });
         },
-        (err, nodes) => {
-          if (!!err) {
-            return cbk(err);
-          }
+        cbk);
+      }],
 
-          const relatedWithAlias = record.related_channels.map(related => {
-            const node = nodes.find(n => !!n && n.public_key === related.with);
+      // Record details
+      details: ['getAliases', 'record', ({getAliases, record}, cbk) => {
+        const aliases = getAliases.filter(n => !!n);
 
-            related.node = !!node && !!node.alias ? node.alias : undefined;
+        const relatedWithAlias = record.related_channels.map(related => {
+          const node = aliases.find(n => n.public_key === related.with);
 
-            return related;
-          });
+          related.node = !!node && !!node.alias ? node.alias : undefined;
 
-          return cbk(null, {
-            chain_fee: record.chain_fee,
-            received: record.received,
-            related_channels: relatedWithAlias,
-            sent: record.sent,
-            sent_to: record.sent_to,
-            tx: record.tx,
-          });
+          return related;
+        });
+
+        return cbk(null, {
+          chain_fee: record.chain_fee,
+          received: record.received,
+          related_channels: relatedWithAlias,
+          sent: record.sent,
+          sent_to: record.sent_to,
+          tx: record.tx,
         });
       }],
     },

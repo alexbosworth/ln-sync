@@ -1,15 +1,32 @@
 const {deepEqual} = require('node:assert').strict;
 const test = require('node:test');
 const {throws} = require('node:assert').strict;
-const {Transaction} = require('bitcoinjs-lib');
+const {transactionFromComponents} = require('@alexbosworth/blockchain');
 
 const method = require('./../../funding/is_encoded_transaction');
 
+const emptyTransaction = transactionFromComponents({
+  inputs: [],
+  locktime: 0,
+  outputs: [],
+  version: 1,
+});
+
 const tests = [
   {
-    args: {input: new Transaction().toHex()},
+    args: {input: emptyTransaction.transaction},
     description: 'A hex transaction is an encoded tx',
     expected: {is_transaction: true},
+  },
+  {
+    args: {input: emptyTransaction.transaction.toUpperCase()},
+    description: 'An uppercase hex transaction is an encoded tx',
+    expected: {is_transaction: true},
+  },
+  {
+    args: {input: emptyTransaction.transaction + '00'},
+    description: 'A transaction with trailing data is not a transaction',
+    expected: {is_transaction: false},
   },
   {
     args: {input: 'invalid transaction'},

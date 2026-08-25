@@ -1,41 +1,38 @@
-const {address} = require('bitcoinjs-lib');
 const asyncAuto = require('async/auto');
+const {componentsOfTransaction} = require('@alexbosworth/blockchain');
 const {createChainAddress} = require('ln-service');
 const {createPsbt} = require('psbt');
+const {decodeBech32Address} = require('@alexbosworth/blockchain');
 const {decodePsbt} = require('psbt');
 const {extendPsbt} = require('psbt');
 const {getChainFeeRate} = require('ln-service');
 const {getHeight} = require('ln-service');
 const {partiallySignPsbt} = require('ln-service');
-const {payments} = require('bitcoinjs-lib');
+const {p2wpkhOutputScript} = require('@alexbosworth/blockchain');
 const {returnResult} = require('asyncjs-util');
 const {signPsbt} = require('ln-service');
 const tinysecp = require('tiny-secp256k1');
-const {Transaction} = require('bitcoinjs-lib');
+const {transactionFromComponents} = require('@alexbosworth/blockchain');
 const {unextractTransaction} = require('psbt');
 
 const getMaxFundAmount = require('./get_max_fund_amount');
 
 const allowedAttributes = ['non_witness_utxo', 'witness_utxo'];
 const bufferAsHex = buffer => buffer.toString('hex');
-const {concat} = Buffer;
 const defaultBlocksBuffer = 18;
-const dummySignature = Buffer.alloc(1);
+const dummySignature = '00';
 const format = 'p2wpkh';
-const {from} = Buffer;
-const {fromBech32} = address;
-const {fromHex} = Transaction;
-const hashAll = Transaction.SIGHASH_ALL;
-const hashDefault = Transaction.SIGHASH_DEFAULT;
-const hexAsBuf = hex => Buffer.from(hex, 'hex');
+const hashAll = 1;
+const hashAllFlag = '01';
+const hashDefault = 0;
 const inputAsOutpoint = n => `${n.transaction_id}:${n.transaction_vout}`;
 const {isArray} = Array;
 const {keys} = Object;
 const minSequence = 0;
 const notEmpty = arr => arr.filter(n => !!n);
-const {p2wpkh} = payments;
 const slowConf = 144;
-const spendAsOutpoint = n => `${n.hash.reverse().toString('hex')}:${n.index}`;
+const spendAsOutpoint = n => `${n.id}:${n.vout}`;
+const txComponents = transaction => componentsOfTransaction({transaction});
 
 /** Partially sign and fund a PSBT and create a conflicting transaction
 
@@ -127,7 +124,7 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
 
       // Extend the PSBT with the derivation paths
       psbtToSign: ['ecp', 'funding', ({ecp, funding}, cbk) => {
-        const tx = fromHex(funding.unsigned_transaction);
+        const tx = txComponents(funding.unsigned_transaction);
 
         // Look to see if there is an input with an unexpected attribute
         const invalidInput = funding.inputs.find(input => {
@@ -144,7 +141,7 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
 
         // Populate the inputs with signing instructions
         const inputs = funding.inputs.map((input, vin) => {
-          const outpoint = spendAsOutpoint(tx.ins[vin]);
+          const outpoint = spendAsOutpoint(tx.inputs[vin]);
 
           // Look for relevant signing instructions
           const utxo = utxos.find(n => inputAsOutpoint(n) === outpoint) || {};
@@ -197,12 +194,14 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
         },
         cbk) =>
       {
-        const hash = fromBech32(createConflictAddress.address).data;
+        const {program} = decodeBech32Address({
+          address: createConflictAddress.address,
+        });
 
         // Make the base conflict PSBT sending the max amount to a P2TR address
         const {psbt} = createPsbt({
           outputs: [{
-            script: bufferAsHex(p2wpkh({hash}).output),
+            script: bufferAsHex(p2wpkhOutputScript({hash: program}).script),
             tokens: getConflictAmount.max_tokens,
           }],
           timelock: getHeight.current_block_height + defaultBlocksBuffer,
@@ -214,21 +213,15 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
         });
 
         const base = decodePsbt({ecp, psbt});
-
-        const tx = fromHex(base.unsigned_transaction);
+        const conflict = conflictingInput;
 
         // Pull the derivation paths into the PSBT to inform signing
-        const inputs = base.inputs.map((input, vin) => {
-          const outpoint = spendAsOutpoint(tx.ins[vin]);
-
-          // Look for relevant signing instructions
-          const utxo = utxos.find(n => inputAsOutpoint(n) === outpoint) || {};
-
+        const inputs = base.inputs.map(input => {
           return {
-            bip32_derivations: utxo.bip32_derivations,
-            non_witness_utxo: utxo.non_witness_utxo,
-            sighash_type: !!utxo.non_witness_utxo ? hashAll : hashDefault,
-            witness_utxo: utxo.witness_utxo,
+            bip32_derivations: conflict.bip32_derivations,
+            non_witness_utxo: conflict.non_witness_utxo,
+            sighash_type: !!conflict.non_witness_utxo ? hashAll : hashDefault,
+            witness_utxo: conflict.witness_utxo,
           };
         });
 
@@ -261,32 +254,43 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
         }
 
         // Create a template transaction to use for the finalized PSBT
-        const tx = fromHex(signatures.unsigned_transaction);
+        const tx = txComponents(signatures.unsigned_transaction);
 
-        const finalized = signatures.inputs.map((input, vin) => {
+        const witnesses = signatures.inputs.map(input => {
           // Exit early when there is no local signature present
           if (!input.partial_sig && !input.taproot_key_spend_sig) {
-            return tx.setWitness(vin, [dummySignature]);
+            return [dummySignature];
           }
 
           // Exit early when setting the signature for v1 Taproot
           if (!!input.taproot_key_spend_sig) {
-            return tx.setWitness(vin, [hexAsBuf(input.taproot_key_spend_sig)]);
+            return [input.taproot_key_spend_sig];
           }
 
           // Set the public key and signature for v0 SegWit
           const [partial] = input.partial_sig;
 
-          return tx.setWitness(vin, [
-            concat([hexAsBuf(partial.signature), from([hashAll])]),
-            hexAsBuf(partial.public_key),
-          ]);
+          return [partial.signature + hashAllFlag, partial.public_key];
+        });
+
+        // Attach the witness stacks to the template transaction
+        const {transaction} = transactionFromComponents({
+          inputs: tx.inputs.map((input, vin) => ({
+            id: input.id,
+            script: input.script,
+            sequence: input.sequence,
+            vout: input.vout,
+            witness: witnesses[vin],
+          })),
+          locktime: tx.locktime,
+          outputs: tx.outputs,
+          version: tx.version,
         });
 
         // Convert the transaction into a finalized PSBT
         const fundingPsbt = unextractTransaction({
           ecp,
-          transaction: tx.toHex(),
+          transaction,
           spending: notEmpty(signatures.inputs.map(n => n.non_witness_utxo)),
           utxos: notEmpty(signatures.inputs.map((input, vin) => {
             return {

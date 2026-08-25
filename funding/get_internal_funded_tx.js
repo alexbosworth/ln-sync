@@ -1,12 +1,11 @@
 const asyncAuto = require('async/auto');
 const {fundPsbt} = require('ln-service');
+const {idForTransaction} = require('@alexbosworth/blockchain');
 const {returnResult} = require('asyncjs-util');
 const {signPsbt} = require('ln-service');
-const {Transaction} = require('bitcoinjs-lib');
 
 const askForFeeRate = require('./ask_for_fee_rate');
 
-const {fromHex} = Transaction;
 const {isArray} = Array;
 
 /** Get a funded tx using internal LND funds
@@ -84,7 +83,7 @@ module.exports = (args, cbk) => {
       // Funded transaction result
       funded: ['createPsbt', 'signPsbt', ({createPsbt, signPsbt}, cbk) => {
         return cbk(null, {
-          id: fromHex(signPsbt.transaction).getId(),
+          id: idForTransaction({transaction: signPsbt.transaction}).id,
           inputs: createPsbt.inputs,
           psbt: signPsbt.psbt,
           transaction: signPsbt.transaction,

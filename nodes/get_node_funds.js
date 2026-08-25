@@ -1,15 +1,13 @@
 const asyncAuto = require('async/auto');
+const {componentsOfTransaction} = require('@alexbosworth/blockchain');
 const {getChainTransactions} = require('ln-service');
 const {getChannels} = require('ln-service');
 const {getLockedUtxos} = require('ln-service');
 const {getPendingChannels} = require('ln-service');
 const {getUtxos} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
-const {Transaction} = require('bitcoinjs-lib');
 
 const detailedBalances = require('./detailed_balances');
-
-const {fromHex} = Transaction;
 
 /** Get a detailed balance that categorizes balance of tokens on the node
 
@@ -90,14 +88,18 @@ module.exports = (args, cbk) => {
             return;
           }
 
-          const output = fromHex(tx.transaction).outs[locked.transaction_vout];
+          const {outputs} = componentsOfTransaction({
+            transaction: tx.transaction,
+          });
+
+          const output = outputs[locked.transaction_vout];
 
           // Exit early when the output is not found in the transaction
           if (!output) {
             return;
           }
 
-          return {tokens: output.value};
+          return {tokens: output.tokens};
         });
 
         return cbk(null, utxos.filter(n => !!n));

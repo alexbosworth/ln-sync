@@ -1,13 +1,22 @@
 const {deepEqual} = require('node:assert').strict;
 const {rejects} = require('node:assert').strict;
 const test = require('node:test');
-const {Transaction} = require('bitcoinjs-lib');
+const {transactionFromComponents} = require('@alexbosworth/blockchain');
 
 const method = require('./../../funding/get_external_funded_tx');
 
+const emptyTransaction = transactionFromComponents({
+  inputs: [],
+  locktime: 0,
+  outputs: [],
+  version: 1,
+});
+
+const hexAsBase64 = hex => Buffer.from(hex, 'hex').toString('base64');
+
 const makeArgs = overrides => {
   const args = {
-    ask: ({}, cbk) => cbk({fund: new Transaction().toHex()}),
+    ask: ({}, cbk) => cbk({fund: emptyTransaction.transaction}),
     logger: {info: () => {}},
     outputs: [{
       address: 'tb1qzmswhxxwxvhat6ke3wu27gqqxn4qxqn6qwarwkz6lmky3l3jqjfqy5wl9x',
@@ -79,7 +88,7 @@ const tests = [
       ask: ({validate}, cbk) => {
         validate('');
 
-        return cbk({fund: new Transaction().toBuffer().toString('base64')});
+        return cbk({fund: hexAsBase64(emptyTransaction.transaction)});
       },
     }),
     description: 'Got externally funded base64 encoded transaction',

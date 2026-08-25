@@ -1,17 +1,17 @@
 const asyncAuto = require('async/auto');
 const asyncEach = require('async/each');
 const asyncReflect = require('async/reflect');
+const {componentsOfTransaction} = require('@alexbosworth/blockchain');
 const {fundPsbt} = require('ln-service');
+const {sizeOfTransaction} = require('@alexbosworth/blockchain');
 const {returnResult} = require('asyncjs-util');
 const {signPsbt} = require('ln-service');
-const {Transaction} = require('bitcoinjs-lib');
 const {unlockUtxo} = require('ln-service');
 
 const adjustFactor = 10;
 const allowZeroConfirmationInputs = 0;
 const {ceil} = Math;
 const dust = 546;
-const {fromHex} = Transaction;
 const {isArray} = Array;
 const sumOf = arr => arr.reduce((sum, n) => sum + n, Number());
 
@@ -165,14 +165,20 @@ module.exports = (args, cbk) => {
         const inTokens = args.inputs.map(n => n.tokens);
 
         // Use the real transaction to confirm the maximum values
-        const tx = fromHex(finalizeMaximum.transaction);
+        const {outputs} = componentsOfTransaction({
+          transaction: finalizeMaximum.transaction,
+        });
 
-        const maxTokens = sumOf(tx.outs.map(n => n.value));
+        const {vsize} = sizeOfTransaction({
+          transaction: finalizeMaximum.transaction,
+        });
+
+        const maxTokens = sumOf(outputs.map(n => n.tokens));
 
         const feeTokens = inTokens - maxTokens;
 
         return cbk(null, {
-          fee_tokens_per_vbyte: feeTokens / tx.virtualSize(),
+          fee_tokens_per_vbyte: feeTokens / vsize,
           max_tokens: maxTokens,
         });
       }],

@@ -3,24 +3,25 @@ const test = require('node:test');
 
 const asyncRetry = require('async/retry');
 const {broadcastChainTransaction} = require('ln-service');
+const {componentsOfTransaction} = require('@alexbosworth/blockchain');
 const {createChainAddress} = require('ln-service');
+const {encodeBech32Address} = require('@alexbosworth/blockchain');
 const {getChainTransactions} = require('ln-service');
 const {getPublicKey} = require('ln-service');
-const {networks} = require('bitcoinjs-lib');
-const {payments} = require('bitcoinjs-lib');
+const {hashForP2wpkh} = require('@alexbosworth/blockchain');
+const {idForTransaction} = require('@alexbosworth/blockchain');
 const {sendToChainAddress} = require('ln-service');
 const {spawnLightningCluster} = require('ln-docker-daemons');
-const {Transaction} = require('bitcoinjs-lib');
 
 const {getNetwork} = require('./../../');
 const {getTransitRefund} = require('./../../');
 
-const {fromHex} = Transaction;
 const hexAsBuffer = hex => Buffer.from(hex, 'hex');
 const maturityBlocks = 100;
-const {p2wpkh} = payments;
+const prefixes = {bitcoin: 'bc', regtest: 'bcrt', testnet: 'tb'};
 const tokens = 1e6;
 const transitKeyFamily = 805;
+const witnessVersion = 0;
 
 return test('Get a refund transaction', async () => {
   const {kill, nodes} = await spawnLightningCluster({});
@@ -34,10 +35,16 @@ return test('Get a refund transaction', async () => {
     // Derive a transit key
     const transitKey = await getPublicKey({lnd, family: transitKeyFamily});
 
+    // The transit address pays to the hash of the transit public key
+    const {hash} = hashForP2wpkh({
+      key: hexAsBuffer(transitKey.public_key),
+    });
+
     // Put together the transit address
-    const {address} = p2wpkh({
-      pubkey: hexAsBuffer(transitKey.public_key),
-      network: networks[(await getNetwork({lnd})).bitcoinjs],
+    const {address} = encodeBech32Address({
+      prefix: prefixes[(await getNetwork({lnd})).bitcoinjs],
+      program: hash,
+      version: witnessVersion,
     });
 
     // Move coins to the transit address
@@ -50,7 +57,9 @@ return test('Get a refund transaction', async () => {
     const {transaction} = transactions.find(n => !n.is_confirmed);
 
     // The spending output index will match the send value
-    const index = fromHex(transaction).outs.findIndex(n => n.value === tokens);
+    const index = componentsOfTransaction({transaction}).outputs.findIndex(n => {
+      return n.tokens === tokens;
+    });
 
     // Make the refund of the transit funds into the refund address
     const {refund} = await getTransitRefund({
@@ -70,7 +79,7 @@ return test('Get a refund transaction', async () => {
       await broadcastChainTransaction({lnd, transaction: refund});
 
       const got = (await getChainTransactions({lnd})).transactions.find(tx => {
-        return tx.id === fromHex(refund).getId();
+        return tx.id === idForTransaction({transaction: refund}).id;
       });
 
       if (!!got.is_confirmed) {

@@ -1,7 +1,6 @@
-const {Transaction} = require('bitcoinjs-lib');
+const {componentsOfTransaction} = require('@alexbosworth/blockchain');
 
-const {fromHex} = Transaction;
-const idFromHash = hash => hash.reverse().toString('hex');
+const txComponents = transaction => componentsOfTransaction({transaction});
 
 /** Transaction records from parents of an original transaction
 
@@ -97,25 +96,25 @@ module.exports = ({ended, id, original, pending, txs, vout}) => {
   }
 
   if (!!spendTx) {
-    fromHex(spendTx.transaction).ins.forEach(input => {
-      const grandParentTx = txs.find(n => n.id === original);
+    txComponents(spendTx.transaction).inputs.forEach(input => {
+      const grandParent = txs.find(n => n.id === original);
 
-      if (!grandParentTx) {
+      if (!grandParent) {
         return;
       }
 
-      return fromHex(grandParentTx.transaction).ins.forEach(grandIn => {
-        const grandTx = txs.find(n => n.id === idFromHash(grandIn.hash));
+      return txComponents(grandParent.transaction).inputs.forEach(grandIn => {
+        const grandTx = txs.find(n => n.id === grandIn.id);
 
         if (!grandTx) {
           return;
         }
 
-        return fromHex(grandTx.transaction).ins.forEach(greatIn => {
-          const greatTx = txs.find(n => n.id === idFromHash(greatIn.hash));
+        return txComponents(grandTx.transaction).inputs.forEach(greatIn => {
+          const greatTx = txs.find(n => n.id === greatIn.id);
 
           const closingTime = ended.find(chan => {
-            return chan.close_transaction_id === idFromHash(greatIn.hash);
+            return chan.close_transaction_id === greatIn.id;
           });
 
           if (!!closingTime && closingTime.is_local_force_close) {

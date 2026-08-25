@@ -1,17 +1,18 @@
 const asyncAuto = require('async/auto');
+const {componentsOfTransaction} = require('@alexbosworth/blockchain');
+const {idForTransaction} = require('@alexbosworth/blockchain');
 const {broadcastChainTransaction} = require('ln-service');
 const {getHeight} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 const {subscribeToBlocks} = require('ln-service');
 const {subscribeToChainAddress} = require('ln-service');
-const {Transaction} = require('bitcoinjs-lib');
 
-const bufferAsHex = buffer => buffer.toString('hex');
-const {fromHex} = Transaction;
 const fuzzBlocks = 10;
 const isHex = n => !!n && !(n.length % 2) && /^[0-9A-F]*$/i.test(n);
 const maxLockTime = 500000000;
 const maxSequence = 0xFFFFFFFF;
+const txComponents = transaction => componentsOfTransaction({transaction});
+const txId = transaction => idForTransaction({transaction}).id;
 
 /** Broadcast a chain transaction until it gets confirmed in a block
 
@@ -45,7 +46,7 @@ module.exports = ({description, lnd, logger, transaction}, cbk) => {
         }
 
         try {
-          fromHex(transaction);
+          txComponents(transaction);
         } catch (err) {
           return cbk([400, 'ExpectedSignedTransactionToBroadcast', {err}]);
         }
@@ -58,10 +59,10 @@ module.exports = ({description, lnd, logger, transaction}, cbk) => {
 
       // Wait for locktime height
       waitForLockTime: ['getHeight', ({getHeight}, cbk) => {
-        const {ins, locktime} = fromHex(transaction);
+        const {inputs, locktime} = txComponents(transaction);
 
         // Exit early when all inputs have max sequence and timelock is ignored
-        if (!ins.filter(n => n.sequence !== maxSequence).length) {
+        if (!inputs.filter(n => n.sequence !== maxSequence).length) {
           return cbk();
         }
 
@@ -98,19 +99,19 @@ module.exports = ({description, lnd, logger, transaction}, cbk) => {
       // Push transaction to the mempool and keep pushing until it's confirmed
       broadcast: ['getHeight', 'waitForLockTime', ({getHeight}, cbk) => {
         let isConfirmed = false;
-        const [{script}] = fromHex(transaction).outs;
+        const [{script}] = txComponents(transaction).outputs;
 
         // Subscribe to blocks
         const blocksSub = subscribeToBlocks({lnd});
 
-        logger.info({transaction_id: fromHex(transaction).getId()});
+        logger.info({transaction_id: txId(transaction)});
 
         // Subscribe to confirmations of the first output script
         const confirmationSub = subscribeToChainAddress({
           lnd,
           min_height: getHeight.current_block_height - fuzzBlocks,
-          output_script: bufferAsHex(script),
-          transaction_id: fromHex(transaction).getId(),
+          output_script: script,
+          transaction_id: txId(transaction),
         });
 
         const returnError = err => {

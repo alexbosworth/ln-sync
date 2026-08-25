@@ -1,11 +1,12 @@
-const {address} = require('bitcoinjs-lib');
 const asyncAuto = require('async/auto');
+const {componentsOfTransaction} = require('@alexbosworth/blockchain');
 const {createChainAddress} = require('ln-service');
+const {encodeBech32Address} = require('@alexbosworth/blockchain');
 const {getPublicKey} = require('ln-service');
-const {networks} = require('bitcoinjs-lib');
-const {payments} = require('bitcoinjs-lib');
+const {hashForP2wpkh} = require('@alexbosworth/blockchain');
+const {p2pkhOutputScript} = require('@alexbosworth/blockchain');
+const {p2wpkhOutputScript} = require('@alexbosworth/blockchain');
 const {returnResult} = require('asyncjs-util');
-const {Transaction} = require('bitcoinjs-lib');
 
 const getFundedTransaction = require('./get_funded_transaction');
 const {getNetwork} = require('./../chain');
@@ -13,14 +14,11 @@ const getTransitRefund = require('./get_transit_refund');
 
 const bufferAsHex = buffer => buffer.toString('hex');
 const familyTemporary = 805;
-const {fromBech32} = address;
-const {fromHex} = Transaction;
 const hexAsBuffer = hex => Buffer.from(hex, 'hex');
 const minimum = 294;
 const notFoundIndex = -1;
-const {p2pkh} = payments;
-const {p2wpkh} = payments;
-const {toOutputScript} = address;
+const prefixes = {bitcoin: 'bc', regtest: 'bcrt', testnet: 'tb'};
+const witnessVersion = 0;
 
 /** Get on-chain funding and a refund
 
@@ -85,7 +83,7 @@ module.exports = ({ask, lnd, logger, rate, tokens}, cbk) => {
 
       // Setup a new transit key for capacity increase
       getTransitKey: ['getNetwork', ({getNetwork}, cbk) => {
-        if (!getNetwork.bitcoinjs) {
+        if (!prefixes[getNetwork.bitcoinjs]) {
           return cbk([400, 'ExpectedKnownNetworkToReserveTransitFunds']);
         }
 
@@ -98,10 +96,21 @@ module.exports = ({ask, lnd, logger, rate, tokens}, cbk) => {
         'getTransitKey',
         ({getNetwork, getTransitKey}, cbk) =>
       {
-        return cbk(null, p2wpkh({
-          network: networks[getNetwork.bitcoinjs],
-          pubkey: hexAsBuffer(getTransitKey.public_key),
-        }));
+        const {hash} = hashForP2wpkh({
+          key: hexAsBuffer(getTransitKey.public_key),
+        });
+
+        const {address} = encodeBech32Address({
+          prefix: prefixes[getNetwork.bitcoinjs],
+          program: hash,
+          version: witnessVersion,
+        });
+
+        return cbk(null, {
+          address,
+          hash,
+          output: bufferAsHex(p2wpkhOutputScript({hash}).script),
+        });
       }],
 
       // Get funding to the transit key
@@ -133,8 +142,10 @@ module.exports = ({ask, lnd, logger, rate, tokens}, cbk) => {
           return cbk([400, 'ExpectedFundedTransactionToReserveTransitFunds']);
         }
 
-        const vout = fromHex(transaction).outs.findIndex(({script}) => {
-          return script.equals(transit.output);
+        const {outputs} = componentsOfTransaction({transaction});
+
+        const vout = outputs.findIndex(({script}) => {
+          return script === transit.output;
         });
 
         if (vout === notFoundIndex) {
@@ -142,7 +153,7 @@ module.exports = ({ask, lnd, logger, rate, tokens}, cbk) => {
         }
 
         // The transaction must have the output sending to the address
-        if (fromHex(transaction).outs[vout].value !== tokens) {
+        if (outputs[vout].tokens !== tokens) {
           return cbk([
             400,
             'UnexpectedFundingAmountPayingToTransitAddress',
@@ -188,14 +199,12 @@ module.exports = ({ask, lnd, logger, rate, tokens}, cbk) => {
       // Final funding details, including a refund paying out of transit
       funding: [
         'getFunding',
-        'getNetwork',
         'getRefund',
         'getTransitKey',
         'transactionVout',
         'transit',
         ({
           getFunding,
-          getNetwork,
           getRefund,
           getTransitKey,
           transactionVout,
@@ -203,20 +212,16 @@ module.exports = ({ask, lnd, logger, rate, tokens}, cbk) => {
         },
         cbk) =>
       {
-        const network = networks[getNetwork.bitcoinjs];
-
-        const {data} = fromBech32(transit.address, network);
-
         return cbk(null, {
           address: transit.address,
           id: getFunding.id,
           index: getTransitKey.index,
           inputs: getFunding.inputs,
           key: getTransitKey.public_key,
-          output: bufferAsHex(toOutputScript(transit.address, network)),
+          output: transit.output,
           psbt: getFunding.psbt,
           refund: getRefund.refund,
-          script: bufferAsHex(p2pkh({hash: data}).output),
+          script: bufferAsHex(p2pkhOutputScript({hash: transit.hash}).script),
           transaction: getFunding.transaction,
           vout: transactionVout,
         });

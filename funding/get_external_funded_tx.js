@@ -1,19 +1,19 @@
-const {address} = require('bitcoinjs-lib');
 const asyncAuto = require('async/auto');
 const {decodePsbt} = require('psbt');
+const {idForTransaction} = require('@alexbosworth/blockchain');
 const {returnResult} = require('asyncjs-util');
 const tinysecp = require('tiny-secp256k1');
-const {Transaction} = require('bitcoinjs-lib');
 
 const isBech32Encoded = require('./is_bech32_encoded');
+const isEncodedTransaction = require('./is_encoded_transaction');
 const transactionFromPsbt = require('./transaction_from_psbt');
 const validateTransactionInput = require('./validate_transaction_input');
 
 const base64AsHex = base64 => Buffer.from(base64, 'base64').toString('hex');
-const {fromHex} = Transaction;
 const interrogationSeparator = ' and \n  ';
 const {isArray} = Array;
 const isBech32 = input => isBech32Encoded({input}).is_bech32;
+const isTx = input => isEncodedTransaction({input}).is_transaction;
 const isHex = n => !(n.length % 2) && /^[0-9A-F]*$/i.test(n);
 const notFoundIndex = -1;
 const or = 'or press enter to cancel funding.\n';
@@ -114,7 +114,9 @@ module.exports = ({ask, logger, outputs}, cbk) => {
         try {
           const decoded = decodePsbt({ecp, psbt: fundingHex});
 
-          const id = fromHex(decoded.unsigned_transaction).getId();
+          const {id} = idForTransaction({
+            transaction: decoded.unsigned_transaction,
+          });
 
           // Attempt to extract the raw tx from the provided PSBT
           const {transaction} = transactionFromPsbt({ecp, psbt: fundingHex});
@@ -124,16 +126,15 @@ module.exports = ({ask, logger, outputs}, cbk) => {
         } catch (err) {}
 
         // A raw TX is expected
-        try {
-          const tx = fromHex(fundingHex);
-
-          const id = tx.getId();
-
-          // The funding is a raw transaction
-          return cbk(null, {id, transaction: fundingHex});
-        } catch (err) {
+        if (!isTx(fundingHex)) {
           return cbk([400, 'ExpectedValidTransactionInput']);
         }
+
+        // The funding is a raw transaction
+        return cbk(null, {
+          id: idForTransaction({transaction: fundingHex}).id,
+          transaction: fundingHex,
+        });
       }],
     },
     returnResult({reject, resolve, of: 'funding'}, cbk));

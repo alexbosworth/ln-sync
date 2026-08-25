@@ -1,6 +1,5 @@
-const {address} = require('bitcoinjs-lib');
+const {componentsOfTransaction} = require('@alexbosworth/blockchain');
 const {decodePsbt} = require('psbt');
-const {Transaction} = require('bitcoinjs-lib');
 
 const bech32AddressAsScript = require('./bech32_address_as_script');
 const isBase64Encoded = require('./is_base64_encoded');
@@ -9,15 +8,14 @@ const isPsbtEncoded = require('./is_psbt_encoded');
 
 const base64AsHex = base64 => Buffer.from(base64, 'base64').toString('hex');
 const bigTok = ({tokens}) => (tokens / 1e8).toFixed(8);
-const hasValue = (output, tokens) => output.value === tokens;
-const hasScript = (output, script) => output.script.equals(script);
-const hexAsBuffer = hex => Buffer.from(hex, 'hex');
+const hasValue = (output, tokens) => output.tokens === tokens;
+const hasScript = (output, script) => output.script === script;
 const isBase64 = input => isBase64Encoded({input}).is_base64;
 const isHex = n => !(n.length % 2) && /^[0-9A-F]*$/i.test(n);
 const isPsbt = (input, ecp) => isPsbtEncoded({ecp, input}).is_psbt;
 const isTx = input => isEncodedTransaction({input}).is_transaction;
 const notFoundIndex = -1;
-const txFromHex = hex => Transaction.fromHex(hex);
+const txAsOutputs = tx => componentsOfTransaction({transaction: tx}).outputs;
 const txFromPsbt = (psbt, ecp) => decodePsbt({ecp, psbt}).unsigned_transaction;
 const txIdHexLength = 64;
 
@@ -68,14 +66,17 @@ module.exports = ({ecp, input, outputs}) => {
     return {valid: 'Enter a valid PSBT or raw signed transaction'};
   }
 
+  // A PSBT encodes the raw unsigned transaction within it
+  const tx = isValidTx ? hex : txFromPsbt(hex, ecp);
+
   // Parse the transaction outputs out of the data
-  const {outs} = isValidTx ? txFromHex(hex) : txFromHex(txFromPsbt(hex, ecp));
+  const outs = txAsOutputs(tx);
 
   // Map the output addresses to scripts to allow for easier out script search
   const outputsWithScripts = outputs.map(({address, tokens}) => {
     return {
       address,
-      script: hexAsBuffer(bech32AddressAsScript({address}).script),
+      script: bech32AddressAsScript({address}).script,
       tokens: Number(tokens),
     };
   });
