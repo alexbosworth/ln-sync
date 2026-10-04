@@ -35,7 +35,7 @@ const tests = [
   {
     args: {address: 'not an address'},
     description: 'A valid address is required to derive an output script',
-    error: 'ExpectedAllBase58CharactersInBase58Address',
+    error: 'ExpectedAllBase58CharactersInBase58CheckString',
   },
 ];
 
