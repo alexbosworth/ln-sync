@@ -2,7 +2,6 @@ const asyncAuto = require('async/auto');
 const {decodePsbt} = require('psbt');
 const {idForTransaction} = require('@alexbosworth/blockchain');
 const {returnResult} = require('asyncjs-util');
-const tinysecp = require('tiny-secp256k1');
 
 const isBech32Encoded = require('./is_bech32_encoded');
 const isEncodedTransaction = require('./is_encoded_transaction');
@@ -40,9 +39,6 @@ const tokAsBigUnit = tokens => (tokens / 1e8).toFixed(8);
 module.exports = ({ask, logger, outputs}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
-      // Import ECPair library
-      ecp: async () => (await import('ecpair')).ECPairFactory(tinysecp),
-
       // Check arguments
       validate: cbk => {
         if (!ask) {
@@ -65,7 +61,7 @@ module.exports = ({ask, logger, outputs}, cbk) => {
       },
 
       // Prompt for a PSBT or a signed transaction
-      getFunding: ['ecp', ({ecp}, cbk) => {
+      getFunding: cbk => {
         const fundSends = outputs.map(n => `${n.address} ${n.tokens}`);
 
         logger.info({fund: `fund ${fundSends.join(' ')}`});
@@ -84,12 +80,12 @@ module.exports = ({ask, logger, outputs}, cbk) => {
           message: `Enter signed transaction or PSBT that pays ${payTo} ${or}`,
           name: 'fund',
           validate: input => {
-            return validateTransactionInput({ecp, input, outputs}).valid;
+            return validateTransactionInput({input, outputs}).valid;
           },
         };
 
         return ask(funding, ({fund}) => cbk(null, fund));
-      }],
+      },
 
       // Translate funding data into hex
       fundingHex: ['getFunding', ({getFunding}, cbk) => {
@@ -109,17 +105,17 @@ module.exports = ({ask, logger, outputs}, cbk) => {
       }],
 
       // Final funding result
-      funding: ['ecp', 'fundingHex', ({ecp, fundingHex}, cbk) => {
+      funding: ['fundingHex', ({fundingHex}, cbk) => {
         // Exit when the hex is a PSBT
         try {
-          const decoded = decodePsbt({ecp, psbt: fundingHex});
+          const decoded = decodePsbt({psbt: fundingHex});
 
           const {id} = idForTransaction({
             transaction: decoded.unsigned_transaction,
           });
 
           // Attempt to extract the raw tx from the provided PSBT
-          const {transaction} = transactionFromPsbt({ecp, psbt: fundingHex});
+          const {transaction} = transactionFromPsbt({psbt: fundingHex});
 
           // The funding is a PSBT
           return cbk(null, {id, transaction, psbt: fundingHex});

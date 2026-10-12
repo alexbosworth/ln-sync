@@ -87,9 +87,9 @@ test('Find confirmed output', async () => {
     deepEqual(confirmedSent.is_coinbase, false, 'Found non-coinbase output');
   } catch (err) {
     deepEqual(err, null, 'Expected no error');
+  } finally {
+    await kill({});
   }
-
-  await kill({});
 
   return;
 });

@@ -60,7 +60,12 @@ tests.forEach(({args, description, error, expected}) => {
         }],
       });
 
-      deepEqual(maximum.fee_tokens_per_vbyte, 4.172727272727273, 'Got fee');
+      const fee = utxo.tokens - maximum.max_tokens;
+
+      // The tx vsize can vary by a byte with the length of the signature
+      const vbytes = Math.round(fee / maximum.fee_tokens_per_vbyte);
+
+      deepEqual([109, 110].includes(vbytes), true, 'Got fee rate for tx');
 
       // LND 0.15.4 and previous allowed more funds
       if (maximum.max_tokens === 4999999577) {
@@ -76,9 +81,9 @@ tests.forEach(({args, description, error, expected}) => {
       );
     } catch (err) {
       deepEqual(err, null, 'Expected no error');
+    } finally {
+      await kill({});
     }
-
-    await kill({});
 
     return;
   });

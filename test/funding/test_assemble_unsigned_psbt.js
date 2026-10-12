@@ -3,7 +3,6 @@ const {rejects} = require('node:assert').strict;
 const test = require('node:test');
 const {componentsOfTransaction} = require('@alexbosworth/blockchain');
 const {decodePsbt} = require('psbt');
-const tinysecp = require('tiny-secp256k1');
 
 const method = require('./../../funding/assemble_unsigned_psbt');
 
@@ -25,7 +24,6 @@ const makeArgs = overrides => {
       },
       {
         change: '0014' + '99'.repeat(20),
-        funding: ['0020' + '77'.repeat(32)],
         utxos: [{
           transaction_id: 'cd'.repeat(32),
           transaction_vout: 1,
@@ -43,6 +41,8 @@ const makeArgs = overrides => {
 
   return args;
 };
+
+const sumOf = arr => arr.reduce((sum, n) => sum + n, 0);
 
 const sortOutputs = outputs => outputs.slice().sort((a, b) => {
   return a.tokens - b.tokens || (a.script < b.script ? -1 : 1);
@@ -73,7 +73,6 @@ const tests = [
         {id: 'cd'.repeat(32), vout: 1},
       ],
       outputs: [
-        {script: '0020' + '77'.repeat(32), tokens: 1000000},
         {script: '0020' + '77'.repeat(32), tokens: 1000000},
         {script: '0014' + '66'.repeat(20), tokens: 4499747},
         {script: '0014' + '99'.repeat(20), tokens: 5499769},
@@ -158,11 +157,9 @@ tests.forEach(({args, description, error, expected}) => {
       return;
     }
 
-    const ecp = (await import('ecpair')).ECPairFactory(tinysecp);
-
     const {psbt} = await method(args);
 
-    const decoded = decodePsbt({ecp, psbt});
+    const decoded = decodePsbt({psbt});
 
     const tx = componentsOfTransaction({
       transaction: decoded.unsigned_transaction,
@@ -180,6 +177,13 @@ tests.forEach(({args, description, error, expected}) => {
     deepEqual(inputs, expected.inputs, 'Got expected transaction inputs');
     deepEqual(sortOutputs(tx.outputs), expected.outputs, 'Got outputs');
     deepEqual(utxos, expected.utxos, 'Got expected witness utxos');
+
+    // The outputs can never spend more than the inputs
+    deepEqual(
+      sumOf(tx.outputs.map(n => n.tokens)) < sumOf(utxos.map(n => n.tokens)),
+      true,
+      'Outputs spend less than the inputs'
+    );
 
     return;
   });

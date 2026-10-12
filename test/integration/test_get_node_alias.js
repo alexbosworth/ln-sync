@@ -29,9 +29,9 @@ tests.forEach(({args, description, error, expected}) => {
       deepEqual(res, expected({id}), 'Got expected result');
     } catch (err) {
       fail(err);
+    } finally {
+      await kill({});
     }
-
-    await kill({});
 
     return;
   });

@@ -73,9 +73,9 @@ return test('Fund disallowing inputs', async () => {
     deepEqual(funds.outputs.length , 2, 'Got expected outputs');
   } catch (err) {
     deepEqual(err, null, 'Expected no error');
+  } finally {
+    await kill({});
   }
-
-  await kill({});
 
   return;
 });

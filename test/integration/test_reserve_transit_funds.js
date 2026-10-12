@@ -116,9 +116,9 @@ test(`Reserve transit funds`, async () => {
     });
   } catch (err) {
     equal(err, null, 'Expected no error');
+  } finally {
+    await kill({});
   }
-
-  await kill({});
 
   return;
 });

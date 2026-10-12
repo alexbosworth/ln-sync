@@ -74,9 +74,9 @@ return test('Check if peer accepts open', async () => {
     }
   } catch (err) {
     deepEqual(err, null, 'Expected no error');
+  } finally {
+    await kill({});
   }
-
-  await kill({});
 
   return;
 });

@@ -1,6 +1,6 @@
-const addressDatafromBech32 = require('./address_data_from_bech32');
+const {decodeBech32Address} = require('@alexbosworth/blockchain');
 
-/** Determine if a string is bech32 encoded
+/** Determine if a string is a bech32 or bech32m encoded witness address
 
   {
     input: <Input String>
@@ -13,7 +13,7 @@ const addressDatafromBech32 = require('./address_data_from_bech32');
 */
 module.exports = ({input}) => {
   try {
-    return {is_bech32: !!addressDatafromBech32({address: input})};
+    return {is_bech32: !!decodeBech32Address({address: input})};
   } catch (e) {
     return {is_bech32: false};
   }

@@ -3,7 +3,6 @@ const {returnResult} = require('asyncjs-util');
 const {createPsbt} = require('psbt');
 const {extendPsbt} = require('psbt');
 const {sizeOfTransaction} = require('@alexbosworth/blockchain');
-const tinysecp = require('tiny-secp256k1');
 const {transactionFromComponents} = require('@alexbosworth/blockchain');
 
 const asTx = components => transactionFromComponents(components).transaction;
@@ -53,9 +52,6 @@ const vsizeOf = tx => sizeOfTransaction({transaction: asTx(tx)}).vsize;
 module.exports = ({capacity, proposed, rate}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
-      // Import ECPair library
-      ecp: async () => (await import('ecpair')).ECPairFactory(tinysecp),
-
       // Check arguments
       validate: cbk => {
         if (!capacity) {
@@ -154,7 +150,7 @@ module.exports = ({capacity, proposed, rate}, cbk) => {
       }],
 
       // Assemble the funding for the unsigned PSBT
-      funding: ['ecp', 'outputs', ({ecp, outputs}, cbk) => {
+      funding: ['outputs', ({outputs}, cbk) => {
         // Put together all inputs funding the transaction, shuffle inputs
         const utxos = flatten(proposed.map(n => n.utxos))
           .map(utxo => ({
@@ -173,7 +169,6 @@ module.exports = ({capacity, proposed, rate}, cbk) => {
 
         // Extend the base PSBT with the UTXO metadata
         const extended = extendPsbt({
-          ecp,
           inputs: utxos.map(utxo => ({
             non_witness_utxo: utxo.non_witness_utxo,
             witness_utxo: utxo.witness_utxo,

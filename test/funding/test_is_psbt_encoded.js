@@ -2,8 +2,6 @@ const {deepEqual} = require('node:assert').strict;
 const test = require('node:test');
 const {throws} = require('node:assert').strict;
 
-const tinysecp = require('tiny-secp256k1');
-
 const method = require('./../../funding/is_psbt_encoded');
 
 const tests = [
@@ -23,10 +21,6 @@ const tests = [
 
 tests.forEach(({args, description, error, expected}) => {
   return test(description, async () => {
-    const ecp = (await import('ecpair')).ECPairFactory(tinysecp);
-
-    args.ecp = ecp;
-
     if (!!error) {
       throws(() => method(args), new Error(error), 'Error returned');
     } else {

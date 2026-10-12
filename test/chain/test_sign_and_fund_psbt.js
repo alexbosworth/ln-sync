@@ -5,7 +5,6 @@ const {createPsbt} = require('psbt');
 const {extendPsbt} = require('psbt');
 const {hashForP2wpkh} = require('@alexbosworth/blockchain');
 const {idForTransaction} = require('@alexbosworth/blockchain');
-const tinysecp = require('tiny-secp256k1');
 const {transactionFromComponents} = require('@alexbosworth/blockchain');
 
 const {makeLnd} = require('mock-lnd');
@@ -14,7 +13,7 @@ const method = require('./../../chain/sign_and_fund_psbt');
 
 const conflictAddress = 'bc1qqurswpc8qurswpc8qurswpc8qurswpc89fe3yv';
 const publicKey = '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058';
-const signature = '3044022074018ad4180097b873323c0015720b3684cc8123891048e7dbcd9b55ad679c99022073d369b740e3eb53dcefa33823c8070514ca55a7dd9544f157c167913261118c';
+const signature = '3044022074018ad4180097b873323c0015720b3684cc8123891048e7dbcd9b55ad679c99022073d369b740e3eb53dcefa33823c8070514ca55a7dd9544f157c1';
 
 const keyHash = hashForP2wpkh({
   key: Buffer.from(publicKey, 'hex'),
@@ -99,27 +98,22 @@ const utxos = [
   },
 ];
 
-// Fixtures that require an ECPair library are made asynchronously
+// Fixtures for the PSBTs that are used in the tests
 const setup = (async () => {
-  const ecp = (await import('ecpair')).ECPairFactory(tinysecp);
-
   // The base funding PSBT has a non witness utxo set for the first input
   const basePsbt = extendPsbt({
-    ecp,
     inputs: [{non_witness_utxo: prevTx1}, {}, {}],
     psbt: base.psbt,
   }).psbt;
 
   // A PSBT with an unexpected input attribute is invalid for funding
   const invalidAttributePsbt = extendPsbt({
-    ecp,
     inputs: [{sighash_type: 1}, {}, {}],
     psbt: base.psbt,
   }).psbt;
 
   // The partially signed PSBT has a signature for every local input
   const signedResponse = extendPsbt({
-    ecp,
     inputs: [
       {
         non_witness_utxo: prevTx1,
@@ -134,7 +128,6 @@ const setup = (async () => {
 
   // A response with no signatures on any input is a signing failure
   const unsignedResponse = extendPsbt({
-    ecp,
     inputs: [
       {witness_utxo: witnessUtxo1},
       {witness_utxo: witnessUtxo2},

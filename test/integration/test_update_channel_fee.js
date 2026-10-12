@@ -77,10 +77,9 @@ return test('Update a channel fee', async () => {
     deepEqual(policy, expected, 'Got expected policy updates');
   } catch (err) {
     deepEqual(err, null, 'Expected no error');
+  } finally {
+    await kill({});
   }
-
-  // Always clean up the test instances
-  await kill({});
 
   return;
 });

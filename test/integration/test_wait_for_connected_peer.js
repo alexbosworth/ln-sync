@@ -32,9 +32,9 @@ return test('Peer is connected', async () => {
     await waitForConnectedPeer({lnd, id: target.id});
   } catch (err) {
     deepEqual(err, null, 'No error is expected');
+  } finally {
+    await kill({});
   }
-
-  await kill({});
 
   return;
 });

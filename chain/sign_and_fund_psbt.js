@@ -11,7 +11,6 @@ const {partiallySignPsbt} = require('ln-service');
 const {p2wpkhOutputScript} = require('@alexbosworth/blockchain');
 const {returnResult} = require('asyncjs-util');
 const {signPsbt} = require('ln-service');
-const tinysecp = require('tiny-secp256k1');
 const {transactionFromComponents} = require('@alexbosworth/blockchain');
 const {unextractTransaction} = require('psbt');
 
@@ -70,9 +69,6 @@ const txComponents = transaction => componentsOfTransaction({transaction});
 module.exports = ({lnd, psbt, utxos}, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
-      // Import ECPair library
-      ecp: async () => (await import('ecpair')).ECPairFactory(tinysecp),
-
       // Check arguments
       validate: cbk => {
         if (!lnd) {
@@ -114,16 +110,16 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
       }],
 
       // Decode the base PSBT to get the unsigned funding transaction
-      funding: ['ecp', 'validate', ({ecp}, cbk) => {
+      funding: ['validate', ({}, cbk) => {
         try {
-          return cbk(null, decodePsbt({ecp, psbt}));
+          return cbk(null, decodePsbt({psbt}));
         } catch (err) {
           return cbk([400, 'ExpectedValidPsbtToSignAndFundPsbt', {err}]);
         }
       }],
 
       // Extend the PSBT with the derivation paths
-      psbtToSign: ['ecp', 'funding', ({ecp, funding}, cbk) => {
+      psbtToSign: ['funding', ({funding}, cbk) => {
         const tx = txComponents(funding.unsigned_transaction);
 
         // Look to see if there is an input with an unexpected attribute
@@ -155,7 +151,7 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
         });
 
         // Extend the base PSBT with relevant signing information
-        return cbk(null, {psbt: extendPsbt({ecp, inputs, psbt}).psbt});
+        return cbk(null, {psbt: extendPsbt({inputs, psbt}).psbt});
       }],
 
       // Find the conflicting amount to send to the refund address
@@ -182,13 +178,11 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
       conflict: [
         'conflictingInput',
         'createConflictAddress',
-        'ecp',
         'getConflictAmount',
         'getHeight',
         ({
           conflictingInput,
           createConflictAddress,
-          ecp,
           getConflictAmount,
           getHeight,
         },
@@ -212,7 +206,7 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
           }],
         });
 
-        const base = decodePsbt({ecp, psbt});
+        const base = decodePsbt({psbt});
         const conflict = conflictingInput;
 
         // Pull the derivation paths into the PSBT to inform signing
@@ -226,7 +220,7 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
         });
 
         // Extend the base PSBT with relevant signing information
-        return cbk(null, extendPsbt({ecp, inputs, psbt}).psbt);
+        return cbk(null, extendPsbt({inputs, psbt}).psbt);
       }],
 
       // Sign and finalize the conflicting PSBT to get the conflict transaction
@@ -240,8 +234,8 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
       }],
 
       // Set the final signature into the base PSBT
-      finalize: ['ecp', 'signPsbt', ({ecp, signPsbt}, cbk) => {
-        const signatures = decodePsbt({ecp, psbt: signPsbt.psbt});
+      finalize: ['signPsbt', ({signPsbt}, cbk) => {
+        const signatures = decodePsbt({psbt: signPsbt.psbt});
 
         // Select the transaction inputs that have a signature
         const inputsWithSignatures = signatures.inputs.filter(input => {
@@ -289,7 +283,6 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
 
         // Convert the transaction into a finalized PSBT
         const fundingPsbt = unextractTransaction({
-          ecp,
           transaction,
           spending: notEmpty(signatures.inputs.map(n => n.non_witness_utxo)),
           utxos: notEmpty(signatures.inputs.map((input, vin) => {
@@ -306,17 +299,15 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
 
       // Final funded transactions resolution
       result: [
-        'ecp',
         'finalize',
         'signConflict',
         'signPsbt',
-        ({ecp, finalize, signConflict, signPsbt}, cbk) =>
+        ({finalize, signConflict, signPsbt}, cbk) =>
       {
-        const signed = decodePsbt({ecp, psbt: signPsbt.psbt});
+        const signed = decodePsbt({psbt: signPsbt.psbt});
 
         // Add the resulting signatures into the base PSBT so that it's signed
         const extended = extendPsbt({
-          ecp,
           psbt,
           inputs: signed.inputs.map(input => {
             return {

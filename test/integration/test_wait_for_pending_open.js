@@ -83,9 +83,9 @@ return test('Wait for a pending open', async () => {
     deepEqual(got.transaction_vout, channel.transaction_vout, 'Got tx vout');
   } catch (err) {
     deepEqual(err, null, 'Expected no error');
+  } finally {
+    await kill({});
   }
-
-  await kill({});
 
   return;
 });

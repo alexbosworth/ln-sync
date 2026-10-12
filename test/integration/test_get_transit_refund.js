@@ -92,9 +92,9 @@ return test('Get a refund transaction', async () => {
     });
   } catch (err) {
     deepEqual(err, null, 'Expected no error');
+  } finally {
+    await kill({});
   }
-
-  await kill({});
 
   return;
 });

@@ -4,7 +4,6 @@ const {finalizePsbt} = require('psbt');
 /** Extract a transaction from a PSBT if it can be extracted
 
   {
-    ecp: <ECPair Object>
     psbt: <PSBT Hex String>
   }
 
@@ -13,10 +12,10 @@ const {finalizePsbt} = require('psbt');
     transaction: <Raw Trarnsaction Hex String>
   }
 */
-module.exports = ({ecp, psbt}) => {
+module.exports = ({psbt}) => {
   // Attempt extracting a transaction from a finalized PSBT
   try {
-    const {transaction} = extractTransaction({ecp, psbt});
+    const {transaction} = extractTransaction({psbt});
 
     return {transaction};
   } catch (err) {
@@ -25,9 +24,9 @@ module.exports = ({ecp, psbt}) => {
 
   // Attempt extraction a transaction from a non-final PSBT
   try {
-    const finalized = finalizePsbt({ecp, psbt});
+    const finalized = finalizePsbt({psbt});
 
-    const {transaction} = extractTransaction({ecp, psbt: finalized.psbt});
+    const {transaction} = extractTransaction({psbt: finalized.psbt});
 
     return {transaction};
   } catch (err) {

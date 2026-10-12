@@ -596,9 +596,9 @@ return test('Request rules are enforced', async () => {
     }
   } catch (err) {
     deepEqual(err, null, 'Expected no error');
+  } finally {
+    await kill({});
   }
-
-  await kill({});
 
   return;
 });

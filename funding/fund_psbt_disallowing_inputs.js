@@ -6,7 +6,6 @@ const {decodePsbt} = require('psbt');
 const {fundPsbt} = require('ln-service');
 const {lockUtxo} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
-const tinysecp = require('tiny-secp256k1');
 const {unlockUtxo} = require('ln-service');
 
 const {isArray} = Array;
@@ -55,9 +54,6 @@ const {isArray} = Array;
 module.exports = (args, cbk) => {
   return new Promise((resolve, reject) => {
     return asyncAuto({
-      // Import ECPair library
-      ecp: async () => (await import('ecpair')).ECPairFactory(tinysecp),
-
       // Check arguments
       validate: cbk => {
         if (!isArray(args.disallow_inputs)) {
@@ -123,12 +119,12 @@ module.exports = (args, cbk) => {
       }],
 
       // Final funded PSBT
-      funded: ['ecp', 'fundPsbt', 'unlock', ({ecp, fundPsbt}, cbk) => {
+      funded: ['fundPsbt', 'unlock', ({fundPsbt}, cbk) => {
         if (!!fundPsbt.error) {
           return cbk(fundPsbt.error);
         }
 
-        const {inputs} = decodePsbt({ecp, psbt: fundPsbt.value.psbt});
+        const {inputs} = decodePsbt({psbt: fundPsbt.value.psbt});
 
         return cbk(null, {
           inputs: fundPsbt.value.inputs.map((input, vin) => ({
