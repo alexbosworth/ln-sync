@@ -1,7 +1,7 @@
 const asyncAuto = require('async/auto');
-const {getChannels} = require('lightning/lnd_methods');
-const {getNode} = require('lightning/lnd_methods');
-const {getPendingChannels} = require('lightning/lnd_methods');
+const {getChannels} = require('ln-service');
+const {getNode} = require('ln-service');
+const {getPendingChannels} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const peerLiquidity = require('./peer_liquidity');

@@ -1,12 +1,11 @@
 const asyncAuto = require('async/auto');
-const {getChannels} = require('lightning/lnd_methods');
-const {getNode} = require('lightning/lnd_methods');
-const {getWalletInfo} = require('lightning/lnd_methods');
+const {getChannels} = require('ln-service');
+const {getNode} = require('ln-service');
+const {getWalletInfo} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const liquidityTokens = require('./liquidity_tokens');
 const {getNetwork} = require('./../chain');
-const {getScoredNodes} = require('./../graph');
 
 const {isArray} = Array;
 

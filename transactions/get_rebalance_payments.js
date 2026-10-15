@@ -129,7 +129,7 @@ module.exports = ({after, lnds}, cbk) => {
           return asyncMapLimit(getSettled, maxGetPayments, ({id}, cbk) => {
             return getPayment({id, lnd}, (err, res) => {
               // Exit early when there is no matching payment
-              if (isArray(err) && err.shift() === notFound) {
+              if (isArray(err) && err.slice().shift() === notFound) {
                 return cbk();
               }
 

@@ -1,11 +1,11 @@
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
 const {componentsOfTransaction} = require('@alexbosworth/blockchain');
-const {getChainTransactions} = require('lightning/lnd_methods');
-const {getChannels} = require('lightning/lnd_methods');
-const {getClosedChannels} = require('lightning/lnd_methods');
-const {getNode} = require('lightning/lnd_methods');
-const {getPendingChannels} = require('lightning/lnd_methods');
+const {getChainTransactions} = require('ln-service');
+const {getChannels} = require('ln-service');
+const {getClosedChannels} = require('ln-service');
+const {getNode} = require('ln-service');
+const {getPendingChannels} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const transactionRecords = require('./transaction_records');

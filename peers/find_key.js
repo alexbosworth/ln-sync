@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
 const asyncRetry = require('async/retry');
-const {getChannels} = require('lightning/lnd_methods');
-const {getNode} = require('lightning/lnd_methods');
+const {getChannels} = require('ln-service');
+const {getNode} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const {isArray} = Array;

@@ -46,8 +46,6 @@ module.exports = ({id, lnd, timeout}, cbk) => {
 
         // Avoid waiting indefinitely, unsubscribe after a timeout
         const timer = setTimeout(() => {
-          sub.on('error', () => {});
-
           sub.removeAllListeners();
 
           return cbk();

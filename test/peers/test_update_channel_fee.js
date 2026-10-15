@@ -71,7 +71,16 @@ const makeLnd = overrides => {
           overrides.pendingChannelsResponse || pendingChannelsResponse
         );
       },
-      updateChannelPolicy: ({}, cbk) => cbk(null, {failed_updates: []}),
+      updateChannelPolicy: ({time_lock_delta}, cbk) => {
+        const cltvDelta = overrides.updatedCltvDelta || time_lock_delta;
+
+        // Exit early when the policy is not updated to the expected delta
+        if (time_lock_delta !== cltvDelta) {
+          return cbk('err');
+        }
+
+        return cbk(null, {failed_updates: []});
+      },
     },
   };
 };
@@ -168,6 +177,43 @@ const tests = [
     error: [503, 'ChannelToSetFeeRateForIsStillPending'],
   },
   {
+    args: makeArgs({from: Buffer.alloc(33, 2).toString('hex')}),
+    description: 'Fee rate update expects an existing policy',
+    error: [404, 'ExpectedExistingChannelPolicyToUpdate'],
+  },
+  {
+    args: makeArgs({
+      lnd: makeLnd({
+        chanInfoResponse: {
+          ...chanInfoResponse,
+          node1_policy: {...chanInfoResponse.node1_policy, time_lock_delta: 0},
+        },
+      }),
+    }),
+    description: 'Fee rate update expects an existing CLTV delta',
+    error: [404, 'UnexpectedMissingCltvDeltaUpdatingChannelFee'],
+  },
+  {
+    args: makeArgs({lnd: makeLnd({updatedCltvDelta: 2})}),
+    description: 'Fee rate update returns an error when the update fails',
+    error: [503, 'UnexpectedErrorUpdatingRoutingFees', {err: 'err'}],
+  },
+  {
+    args: makeArgs({base_fee_mtokens: '2'}),
+    description: 'Fee rate checks when a base fee is not applied',
+    error: [503, 'FailedToUpdateChannelPolicyToNewBaseFee'],
+  },
+  {
+    args: makeArgs({cltv_delta: 2}),
+    description: 'Fee rate checks when a CLTV delta is not applied',
+    error: [503, 'FailedToUpdateCltvDeltaToNewCltvDelta'],
+  },
+  {
+    args: makeArgs({fee_rate: 5}),
+    description: 'Fee rate checks when a fee rate is not applied',
+    error: [503, 'FailedToUpdateChannelPolicyToNewFeeRate'],
+  },
+  {
     args: makeArgs({inbound_rate_discount: 100}),
     description: 'Fee rate checks when an inbound discount is not applied',
     error: [503, 'FailedToUpdateInboundDiscountToNewRateDiscount'],
@@ -175,6 +221,20 @@ const tests = [
   {
     args: makeArgs({}),
     description: 'Fee rate is updated',
+  },
+  {
+    args: makeArgs({
+      base_fee_mtokens: undefined,
+      cltv_delta: undefined,
+      lnd: makeLnd({
+        chanInfoResponse: {
+          ...chanInfoResponse,
+          node1_policy: {...chanInfoResponse.node1_policy, time_lock_delta: 3},
+        },
+        updatedCltvDelta: 3,
+      }),
+    }),
+    description: 'Fee rate is updated using the existing base fee and CLTV',
   },
 ];
 

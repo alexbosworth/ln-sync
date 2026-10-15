@@ -1,5 +1,5 @@
 const asyncAuto = require('async/auto');
-const {getNode} = require('lightning/lnd_methods');
+const {getNode} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const isPublicKey = n => !!n && /^[0-9A-F]{66}$/i.test(n);

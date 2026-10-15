@@ -1,5 +1,5 @@
 const asyncAuto = require('async/auto');
-const {getWalletInfo} = require('lightning/lnd_methods');
+const {getWalletInfo} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 
 const {chains} = require('./networks');

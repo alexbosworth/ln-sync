@@ -123,6 +123,25 @@ const tests = [
       onchain_vbytes: 0,
     },
   },
+  {
+    args: {
+      channels: [],
+      locked: [],
+      pending: [{is_closing: true, local_balance: 3}],
+      transactions: [],
+      utxos: [],
+    },
+    description: 'Closing balance is calculated when nothing is recovered yet',
+    expected: {
+      closing_balance: 3,
+      conflicted_pending: 0,
+      invalid_pending: 0,
+      offchain_balance: 0,
+      offchain_pending: 0,
+      onchain_balance: 0,
+      onchain_vbytes: 0,
+    },
+  },
 ];
 
 tests.forEach(({args, description, error, expected}) => {
