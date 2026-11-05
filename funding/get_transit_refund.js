@@ -1,4 +1,5 @@
 const asyncAuto = require('async/auto');
+const asyncify = require('async/asyncify');
 const {decodeBech32Address} = require('@alexbosworth/blockchain');
 const {getChainFeeRate} = require('ln-service');
 const {p2pkhOutputScript} = require('@alexbosworth/blockchain');
@@ -91,6 +92,15 @@ module.exports = (args, cbk) => {
         return cbk();
       }],
 
+      // Get the output script for the refund address
+      refundOutput: ['validate', asyncify(({}) => {
+        try {
+          return addressAsOutputScript({address: args.refund_address});
+        } catch (err) {
+          throw [400, 'ExpectedValidRefundAddressToGetTransitRefund'];
+        }
+      })],
+
       // Get the chain fee rate
       getRate: ['validate', ({}, cbk) => {
         return getChainFeeRate({
@@ -101,32 +111,29 @@ module.exports = (args, cbk) => {
       }],
 
       // Create the transaction to sign
-      transactionToSign: ['getRate', 'nets', ({getRate}, cbk) => {
+      transactionToSign: [
+        'getRate',
+        'nets',
+        'refundOutput',
+        ({getRate, refundOutput}, cbk) =>
+      {
         const fee = ceil(getRate.tokens_per_vbyte * refundTxSize);
 
-        try {
-          // The refund pays the transit funds to the refund address, minus fee
-          const refundOutput = addressAsOutputScript({
-            address: args.refund_address,
-          });
-
-          return cbk(null, {
-            inputs: [{
-              id: args.transaction_id,
-              script: emptyScriptSig,
-              sequence: defaultSequence,
-              vout: args.transaction_vout,
-            }],
-            locktime: defaultLocktime,
-            outputs: [{
-              script: refundOutput.script,
-              tokens: args.funded_tokens - fee,
-            }],
-            version: defaultTxVersion,
-          });
-        } catch (err) {
-          return cbk([400, 'ExpectedValidRefundAddressToGetTransitRefund']);
-        }
+        // The refund pays the transit funds to the refund address, minus fee
+        return cbk(null, {
+          inputs: [{
+            id: args.transaction_id,
+            script: emptyScriptSig,
+            sequence: defaultSequence,
+            vout: args.transaction_vout,
+          }],
+          locktime: defaultLocktime,
+          outputs: [{
+            script: refundOutput.script,
+            tokens: args.funded_tokens - fee,
+          }],
+          version: defaultTxVersion,
+        });
       }],
 
       // Get the signature for the unsigned refund transaction

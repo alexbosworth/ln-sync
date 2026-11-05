@@ -135,6 +135,7 @@ module.exports = (args, cbk) => {
         const adjustment = ceil(args.fee_tokens_per_vbyte * adjustFactor);
         const max = sumOf(createTemplate.outputs.map(n => n.tokens));
         const outs = createTemplate.outputs.filter(n => !n.is_change);
+
         const baseline = sumOf(outs.map(n => n.tokens));
 
         // In LND 0.15.3 spending P2TR outputs requires adjusted dust value
@@ -162,7 +163,7 @@ module.exports = (args, cbk) => {
       // Derive the maximum spendable tokens from the final TX
       max: ['finalizeMaximum', ({finalizeMaximum}, cbk) => {
         // The fee will be the difference between in tokens and out tokens
-        const inTokens = args.inputs.map(n => n.tokens);
+        const inTokens = sumOf(args.inputs.map(n => n.tokens));
 
         // Use the real transaction to confirm the maximum values
         const {outputs} = componentsOfTransaction({

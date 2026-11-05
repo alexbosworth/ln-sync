@@ -325,6 +325,57 @@ Find the max amount that can be used for funding outputs given inputs
       max_tokens: <Maximum Spendable Tokens Number>
     }
 
+### `getMaxFundingValue`
+
+Find the max amount that can be used for a funding output given inputs
+
+The max is for one more output in addition to any `outputs`. Without an
+`output_script` it is sized as a 34 byte script (P2TR or P2WSH, like a
+channel funding output), so it is exact for those and slightly low for
+shorter scripts like P2WPKH. Pass `output_script` to size it exactly.
+
+`output_script` can be P2PKH, P2SH, P2WPKH, P2WSH or P2TR
+
+The inputs do not need to be locked, they are not locked by this method, and
+no other wallet coins will be selected to add to them
+
+Inputs are not checked to be unspent, locking them before funding does that
+
+The max is for a transaction that is funded by `createFundedPsbt` with the
+same inputs, outputs, and fee rate. Legacy `fundPsbt` funding will consider
+the max to be insufficient since it always budgets for a change output.
+
+`change_format` options: `p2tr` (the size used without an `output_script`)
+
+`fee_mtokens_per_vbyte` is a precise fee rate, as an alternative to
+`fee_tokens_per_vbyte`. One of them is required.
+
+`max_fee_ratio` is the highest fee to total output value ratio to allow,
+LND uses 0.2 when it is not set
+
+    {
+      [change_format]: <Max Output Address Format String>
+      [fee_mtokens_per_vbyte]: <Funding Fee Millitokens Per VByte Number>
+      [fee_tokens_per_vbyte]: <Funding Fee Tokens Per VByte Number>
+      inputs: [{
+        transaction_id: <UTXO Transaction Id Hex String>
+        transaction_vout: <UTXO Transaction Output Index Number>
+      }]
+      lnd: <Authenticated LND API Object>
+      [max_fee_ratio]: <Maximum Fee To Total Output Value Ratio Number>
+      [output_script]: <Max Output Script Hex String>
+      [outputs]: [{
+        script: <Output Script Hex String>
+        tokens: <Output Value Tokens Number>
+      }]
+    }
+
+    @returns via cbk or Promise
+    {
+      fee_tokens_per_vbyte: <Estimated Final Fee Tokens Per VByte Number>
+      max_tokens: <Maximum Spendable Tokens For Max Output Number>
+    }
+
 ### `getPayments`
 
 Get payments

@@ -1,4 +1,5 @@
 const asyncAuto = require('async/auto');
+const asyncify = require('async/asyncify');
 const {componentsOfTransaction} = require('@alexbosworth/blockchain');
 const {createChainAddress} = require('ln-service');
 const {createPsbt} = require('psbt');
@@ -110,13 +111,13 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
       }],
 
       // Decode the base PSBT to get the unsigned funding transaction
-      funding: ['validate', ({}, cbk) => {
+      funding: ['validate', asyncify(({}) => {
         try {
-          return cbk(null, decodePsbt({psbt}));
+          return decodePsbt({psbt});
         } catch (err) {
-          return cbk([400, 'ExpectedValidPsbtToSignAndFundPsbt', {err}]);
+          throw [400, 'ExpectedValidPsbtToSignAndFundPsbt', {err}];
         }
-      }],
+      })],
 
       // Extend the PSBT with the derivation paths
       psbtToSign: ['funding', ({funding}, cbk) => {

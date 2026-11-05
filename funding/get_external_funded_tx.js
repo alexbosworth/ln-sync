@@ -1,4 +1,5 @@
 const asyncAuto = require('async/auto');
+const asyncify = require('async/asyncify');
 const {decodePsbt} = require('psbt');
 const {idForTransaction} = require('@alexbosworth/blockchain');
 const {returnResult} = require('asyncjs-util');
@@ -104,9 +105,8 @@ module.exports = ({ask, logger, outputs}, cbk) => {
         return cbk(null, base64AsHex(funding));
       }],
 
-      // Final funding result
-      funding: ['fundingHex', ({fundingHex}, cbk) => {
-        // Exit when the hex is a PSBT
+      // Get the funding details when the funding is a PSBT
+      fundingPsbt: ['fundingHex', asyncify(({fundingHex}) => {
         try {
           const decoded = decodePsbt({psbt: fundingHex});
 
@@ -117,9 +117,23 @@ module.exports = ({ask, logger, outputs}, cbk) => {
           // Attempt to extract the raw tx from the provided PSBT
           const {transaction} = transactionFromPsbt({psbt: fundingHex});
 
-          // The funding is a PSBT
-          return cbk(null, {id, transaction, psbt: fundingHex});
-        } catch (err) {}
+          return {id, transaction, psbt: fundingHex};
+        } catch (err) {
+          // Exit early when the funding is not a PSBT
+          return;
+        }
+      })],
+
+      // Final funding result
+      funding: [
+        'fundingHex',
+        'fundingPsbt',
+        ({fundingHex, fundingPsbt}, cbk) =>
+      {
+        // Exit early when the funding is a PSBT
+        if (!!fundingPsbt) {
+          return cbk(null, fundingPsbt);
+        }
 
         // A raw TX is expected
         if (!isTx(fundingHex)) {

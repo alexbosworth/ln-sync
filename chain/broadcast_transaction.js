@@ -1,4 +1,5 @@
 const asyncAuto = require('async/auto');
+const asyncify = require('async/asyncify');
 const {componentsOfTransaction} = require('@alexbosworth/blockchain');
 const {idForTransaction} = require('@alexbosworth/blockchain');
 const {broadcastChainTransaction} = require('ln-service');
@@ -45,21 +46,24 @@ module.exports = ({description, lnd, logger, transaction}, cbk) => {
           return cbk([400, 'ExpectedHexEncodedSignedTransactionToBroadcast']);
         }
 
-        try {
-          txComponents(transaction);
-        } catch (err) {
-          return cbk([400, 'ExpectedSignedTransactionToBroadcast', {err}]);
-        }
-
         return cbk();
       },
 
+      // Decode the signed transaction
+      tx: ['validate', asyncify(({}) => {
+        try {
+          return txComponents(transaction);
+        } catch (err) {
+          throw [400, 'ExpectedSignedTransactionToBroadcast', {err}];
+        }
+      })],
+
       // Get the current block height for watching for confirmation
-      getHeight: ['validate', ({}, cbk) => getHeight({lnd}, cbk)],
+      getHeight: ['tx', ({}, cbk) => getHeight({lnd}, cbk)],
 
       // Wait for locktime height
-      waitForLockTime: ['getHeight', ({getHeight}, cbk) => {
-        const {inputs, locktime} = txComponents(transaction);
+      waitForLockTime: ['getHeight', 'tx', ({getHeight, tx}, cbk) => {
+        const {inputs, locktime} = tx;
 
         // Exit early when all inputs have max sequence and timelock is ignored
         if (!inputs.filter(n => n.sequence !== maxSequence).length) {
@@ -97,9 +101,14 @@ module.exports = ({description, lnd, logger, transaction}, cbk) => {
       }],
 
       // Push transaction to the mempool and keep pushing until it's confirmed
-      broadcast: ['getHeight', 'waitForLockTime', ({getHeight}, cbk) => {
+      broadcast: [
+        'getHeight',
+        'tx',
+        'waitForLockTime',
+        ({getHeight, tx}, cbk) =>
+      {
         let isConfirmed = false;
-        const [{script}] = txComponents(transaction).outputs;
+        const [{script}] = tx.outputs;
 
         // Subscribe to blocks
         const blocksSub = subscribeToBlocks({lnd});

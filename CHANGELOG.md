@@ -1,5 +1,9 @@
 # Versions
 
+## 8.1.0
+
+- `getMaxFundingValue`: Add method to get the max value for a funding output
+
 ## 8.0.9
 
 ### Breaking Changes

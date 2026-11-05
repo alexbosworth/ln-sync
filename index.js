@@ -12,6 +12,7 @@ const {getAllInvoices} = require('./transactions');
 const {getFundedTransaction} = require('./funding');
 const {getLiquidity} = require('./peers');
 const {getMaxFundAmount} = require('./chain');
+const {getMaxFundingValue} = require('./chain');
 const {getNetwork} = require('./chain');
 const {getNodeAlias} = require('./graph');
 const {getNodeFunds} = require('./nodes');
@@ -46,6 +47,7 @@ module.exports = {
   getFundedTransaction,
   getLiquidity,
   getMaxFundAmount,
+  getMaxFundingValue,
   getNetwork,
   getNodeAlias,
   getNodeFunds,

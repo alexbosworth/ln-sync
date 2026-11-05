@@ -21,6 +21,12 @@ const template = createPsbt({
 // The signed maximum spending transaction pays out 48k of the 50k input
 const finalTransaction = '0100000001abababababababababababababababababababababababababababababababab0000000000000000000180bb000000000000160014333333333333333333333333333333333333333300000000';
 
+// The signed maximum spend of two inputs pays out 48k of the 50k in inputs
+const twoInputsTransaction = '0100000002' +
+  'ab'.repeat(32) + '00000000' + '00' + '00000000' +
+  'ab'.repeat(32) + '01000000' + '00' + '00000000' +
+  '01' + '80bb000000000000' + '160014' + '33'.repeat(20) + '00000000';
+
 const makeFundResponse = ({}) => ({
   change_output_index: 1,
   funded_psbt: Buffer.from(template.psbt, 'hex'),
@@ -34,7 +40,7 @@ const makeFundResponse = ({}) => ({
   }],
 });
 
-const makeFundingLnd = ({failures}) => {
+const makeFundingLnd = ({failures, transaction}) => {
   let calls = 0;
 
   return makeLnd({
@@ -49,7 +55,7 @@ const makeFundingLnd = ({failures}) => {
       return cbk(null, makeFundResponse({}));
     },
     signPsbt: ({}, cbk) => cbk(null, {
-      raw_final_tx: Buffer.from(finalTransaction, 'hex'),
+      raw_final_tx: Buffer.from(transaction || finalTransaction, 'hex'),
       signed_psbt: Buffer.from(template.psbt, 'hex'),
     }),
   });
@@ -98,6 +104,20 @@ const tests = [
     description: 'The maximum fundable amount is calculated',
     expected: {
       fee_tokens_per_vbyte: 24.390243902439025,
+      max_tokens: 48000,
+    },
+  },
+  {
+    args: makeArgs({
+      inputs: [
+        {tokens: 30000, transaction_id: transactionId, transaction_vout: 0},
+        {tokens: 20000, transaction_id: transactionId, transaction_vout: 1},
+      ],
+      lnd: makeFundingLnd({transaction: twoInputsTransaction}),
+    }),
+    description: 'Multiple input values are summed to get the fee rate',
+    expected: {
+      fee_tokens_per_vbyte: 2000 / 123,
       max_tokens: 48000,
     },
   },
