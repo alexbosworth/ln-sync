@@ -42,6 +42,19 @@ const makeArgs = overrides => {
   return args;
 };
 
+// Make a proposal that funds a channel from a single P2WPKH UTXO
+const makeProposal = ({change, tokens}) => [{
+  change,
+  funding: ['0020' + '77'.repeat(32)],
+  utxos: [{
+    transaction_id: 'ab'.repeat(32),
+    transaction_vout: 0,
+    witness_utxo: {script_pub: '0014' + '88'.repeat(20), tokens},
+  }],
+}];
+
+const p2pkhScript = '76a914' + '66'.repeat(20) + '88ac';
+
 const sumOf = arr => arr.reduce((sum, n) => sum + n, 0);
 
 const sortOutputs = outputs => outputs.slice().sort((a, b) => {
@@ -145,14 +158,152 @@ const tests = [
       }],
     }),
     description: 'A non segwit utxo is not supported',
-    error: 'UnsupportedOutputType',
+    error: [
+      400,
+      'FailedToDeriveOutputsForPsbt',
+      {err: 'UnsupportedOutputType'},
+    ],
+  },
+  {
+    args: makeArgs({
+      proposed: [{
+        funding: ['0020' + '77'.repeat(32)],
+        utxos: [{
+          transaction_id: 'ab'.repeat(32),
+          transaction_vout: 0,
+          witness_utxo: {
+            script_pub: '0014' + '88'.repeat(20),
+            tokens: 1000000,
+          },
+        }],
+      }],
+    }),
+    description: 'Proposed utxos must cover the funding and the fee',
+    error: [
+      400,
+      'FailedToDeriveOutputsForPsbt',
+      {err: 'ExpectedSufficientFundsInProposedUtxos'},
+    ],
+  },
+  {
+    // The fee is 306, leaving 293 of change: 1 short of P2WPKH dust
+    args: makeArgs({
+      proposed: makeProposal({
+        change: '0014' + '66'.repeat(20),
+        tokens: 1000599,
+      }),
+    }),
+    description: 'Change is required to be above the dust value',
+    error: [
+      400,
+      'FailedToDeriveOutputsForPsbt',
+      {err: 'ExpectedChangeAboveDustInProposedUtxos'},
+    ],
+  },
+  {
+    // The fee is 312, leaving 545 of change: 1 short of P2PKH dust
+    args: makeArgs({
+      proposed: makeProposal({
+        change: p2pkhScript,
+        tokens: 1000857,
+      }),
+    }),
+    description: 'Legacy change is required to be above its dust value',
+    error: [
+      400,
+      'FailedToDeriveOutputsForPsbt',
+      {err: 'ExpectedChangeAboveDustInProposedUtxos'},
+    ],
+  },
+  {
+    // Upper case hex is the same script, with the same P2PKH dust value
+    args: makeArgs({
+      proposed: makeProposal({
+        change: p2pkhScript.toUpperCase(),
+        tokens: 1000857,
+      }),
+    }),
+    description: 'Upper case change has the same dust value',
+    error: [
+      400,
+      'FailedToDeriveOutputsForPsbt',
+      {err: 'ExpectedChangeAboveDustInProposedUtxos'},
+    ],
+  },
+  {
+    // The fee is 332, leaving 575 of change: 1 short of P2PK dust
+    args: makeArgs({
+      proposed: makeProposal({
+        change: '21' + '02'.repeat(33) + 'ac',
+        tokens: 1000907,
+      }),
+    }),
+    description: 'Pay to public key change has a legacy dust value',
+    error: [
+      400,
+      'FailedToDeriveOutputsForPsbt',
+      {err: 'ExpectedChangeAboveDustInProposedUtxos'},
+    ],
+  },
+  {
+    // The fee is 396, leaving 671 of change: 1 short of long P2PK dust
+    args: makeArgs({
+      proposed: makeProposal({
+        change: '41' + '04'.repeat(65) + 'ac',
+        tokens: 1001067,
+      }),
+    }),
+    description: 'Uncompressed public key change has a legacy dust value',
+    error: [
+      400,
+      'FailedToDeriveOutputsForPsbt',
+      {err: 'ExpectedChangeAboveDustInProposedUtxos'},
+    ],
+  },
+  {
+    // The fee is 306, leaving 536 of change: 1 short of the legacy dust
+    args: makeArgs({
+      proposed: makeProposal({
+        change: '6a14' + '66'.repeat(20),
+        tokens: 1000842,
+      }),
+    }),
+    description: 'A data push change is not a witness program',
+    error: [
+      400,
+      'FailedToDeriveOutputsForPsbt',
+      {err: 'ExpectedChangeAboveDustInProposedUtxos'},
+    ],
+  },
+  {
+    args: makeArgs({
+      proposed: [{
+        change: '0014' + '66'.repeat(20),
+        funding: ['0020' + '77'.repeat(32)],
+        utxos: [{
+          non_witness_utxo: 'transaction',
+          transaction_id: 'ab'.repeat(32),
+          transaction_vout: 0,
+          witness_utxo: {
+            script_pub: '0014' + '88'.repeat(20),
+            tokens: 5000000,
+          },
+        }],
+      }],
+    }),
+    description: 'Proposed utxo spending transactions must be valid',
+    error: [
+      400,
+      'FailedToAssembleUnsignedPsbt',
+      {err: 'ExpectedHexValueToExtendPsbt'},
+    ],
   },
 ];
 
 tests.forEach(({args, description, error, expected}) => {
   return test(description, async () => {
     if (!!error) {
-      await rejects(method(args), Array.isArray(error) ? error : new Error(error));
+      await rejects(method(args), error, 'Got expected error');
 
       return;
     }

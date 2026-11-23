@@ -3,6 +3,9 @@ const {returnResult} = require('asyncjs-util');
 
 const api = 'https://nodes.lightning.computer/availability/v1/';
 const {isArray} = Array;
+const {isFinite} = Number;
+const isString = n => typeof n === 'string';
+const isPublicKey = n => isString(n) && /^0[2-3][0-9A-F]{64}$/i.test(n);
 const knownNetworks = ['btc', 'btctestnet', 'ltc'];
 
 /** Get scored nodes
@@ -49,11 +52,11 @@ module.exports = ({network, request}, cbk) => {
             return cbk([503, 'UnexpectedResultFromNodeScores']);
           }
 
-          if (!!res.scores.find(n => !n.public_key)) {
+          if (res.scores.some(n => !n || !isPublicKey(n.public_key))) {
             return cbk([503, 'ExpectedPublicKeyInNodeScoresResult']);
           }
 
-          if (!!res.scores.find(({score}) => score === undefined)) {
+          if (!!res.scores.find(({score}) => !isFinite(score))) {
             return cbk([503, 'ExpectedScoreInNodeScoresResult']);
           }
 

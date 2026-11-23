@@ -3,6 +3,8 @@ const {returnResult} = require('asyncjs-util');
 
 const api = 'https://yalls.org/v0/graph/list/';
 const {isArray} = Array;
+const isString = n => typeof n === 'string';
+const isPublicKey = n => isString(n) && /^0[2-3][0-9A-F]{64}$/i.test(n);
 const networkNames = {btc: 'mainnet', btctestnet: 'testnet'};
 
 /** Get a seed list of reasonable nodes
@@ -48,7 +50,7 @@ module.exports = ({network, request}, cbk) => {
             return cbk([503, 'UnexpectedResultFromSeedNodesResponse']);
           }
 
-          if (!!res.nodes.filter(n => !n.public_key).length) {
+          if (res.nodes.some(n => !n || !isPublicKey(n.public_key))) {
             return cbk([503, 'ExpectedPublicKeyInSeedNodesResult']);
           }
 

@@ -9,6 +9,9 @@ const {isArray} = Array;
 
 /** Get a funded transaction
 
+  An external raw transaction with no signature script or witness on any
+  input is not accepted, even when none of its inputs need to be signed
+
   {
     ask: <Inquirer Ask Function>
     [chain_fee_tokens_per_vbyte]: <Internal Funding Uses Tokens/Vbyte Number>

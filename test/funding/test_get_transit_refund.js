@@ -8,6 +8,8 @@ const method = require('./../../funding/get_transit_refund');
 
 const p2pkhAddress = '1jU2ZiwRwvA6oxkbqz1opzaxWMFyovCBf';
 const p2shAddress = '32Wnq4482y6gaTH9vYmjaorU6iZFt2Tonc';
+const p2trAddress = 'bc1pzyq3zqg3qygszygpzyq3zqg3qygszygpzyq3zqg3qygszygp' +
+  'zyqstwjakd';
 const publicKey = '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058';
 const refundAddress = 'bc1qqurswpc8qurswpc8qurswpc8qurswpc89fe3yv';
 const transitAddress = 'bc1qcv905k9wqeemqzj9khqhml6xxduq79qqy745vn';
@@ -41,11 +43,22 @@ const makeArgs = overrides => {
   return args;
 };
 
-// The signed refund transactions only differ in their output scripts
-const makeRefund = script => [
+// Encode an output value as a little endian 64 bit number
+const tokensAsHex = tokens => {
+  const value = Buffer.alloc(8);
+
+  value.writeBigUInt64LE(BigInt(tokens));
+
+  return value.toString('hex');
+};
+
+// The fee rate is 1.012 per vbyte, and the fee is rounded up
+// The signed refund transactions only differ in their outputs
+const makeRefund = ({script, tokens}) => [
   '01000000000101',
   'aa'.repeat(32),
-  '010000000000000000013286010000000000',
+  '01000000000000000001',
+  tokensAsHex(tokens),
   script,
   '0248',
   '01'.repeat(71),
@@ -106,24 +119,59 @@ const tests = [
     error: [400, 'ExpectedValidRefundAddressToGetTransitRefund'],
   },
   {
+    args: makeArgs({transit_address: 'address'}),
+    description: 'A valid transit address is required for a refund',
+    error: [400, 'ExpectedValidTransitAddressToGetTransitRefund'],
+  },
+  {
+    args: makeArgs({transaction_id: 'id'}),
+    description: 'A valid transaction id is required for a refund',
+    error: [400, 'ExpectedValidOutpointToGetTransitRefund'],
+  },
+  {
+    args: makeArgs({funded_tokens: 400}),
+    description: 'Funded tokens must cover the refund fee and dust',
+    error: [400, 'ExpectedMoreFundedTokensToGetTransitRefund'],
+  },
+  {
     args: makeArgs({}),
     description: 'A refund to a bech32 address is signed',
     expected: {
-      refund: makeRefund('160014' + '07'.repeat(20)),
+      refund: makeRefund({
+        script: '160014' + '07'.repeat(20),
+        tokens: 99888,
+      }),
     },
   },
   {
     args: makeArgs({refund_address: p2pkhAddress}),
     description: 'A refund to a p2pkh address is signed',
     expected: {
-      refund: makeRefund('1976a914' + '08'.repeat(20) + '88ac'),
+      refund: makeRefund({
+        script: '1976a914' + '08'.repeat(20) + '88ac',
+        tokens: 99885,
+      }),
     },
   },
   {
     args: makeArgs({refund_address: p2shAddress}),
     description: 'A refund to a p2sh address is signed',
     expected: {
-      refund: makeRefund('17a914' + '09'.repeat(20) + '87'),
+      refund: makeRefund({
+        script: '17a914' + '09'.repeat(20) + '87',
+        tokens: 99887,
+      }),
+    },
+  },
+  {
+    // A P2TR output is 12 vbytes bigger than a P2WPKH output
+    args: makeArgs({refund_address: p2trAddress}),
+    description: 'A refund to a p2tr address pays for its larger size',
+    expected: {
+      refund: makeRefund({
+        script: '225120' + '1101'.repeat(16),
+        tokens: 99876,
+      }),
     },
   },
 ];

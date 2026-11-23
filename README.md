@@ -207,6 +207,9 @@ Get all invoices
 
 Get a funded transaction
 
+An external raw transaction with no signature script or witness on any
+input is not accepted, even when none of its inputs need to be signed
+
     {
       ask: <Inquirer Ask Function>
       [chain_fee_tokens_per_vbyte]: <Internal Funding Uses Tokens/Vbyte Number>
@@ -744,6 +747,9 @@ Partially sign and fund a PSBT and create a conflicting transaction
 Only P2TR and P2WPKH inputs are supported
 
 To allow for funding a channel, a dummy "finalized" PSBT is returned
+
+The PSBT outputs are not checked: make sure that the PSBT pays out what is
+expected before calling this method, local inputs will be signed as-is
 
     {
       lnd: <Authenticated Signing LND API Object>

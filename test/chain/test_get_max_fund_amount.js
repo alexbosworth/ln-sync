@@ -40,10 +40,16 @@ const makeFundResponse = ({}) => ({
   }],
 });
 
-const makeFundingLnd = ({failures, transaction}) => {
-  let calls = 0;
+const asOutpoint = n => `${n.txid_str}:${n.output_index}`;
+const idOf = n => Buffer.from(n.txid_bytes).reverse().toString('hex');
 
-  return makeLnd({
+// Fund like LND does: inputs get leased, and leased inputs can't be funded
+const makeFundingLnd = ({failures, signErr, transaction}) => {
+  let calls = 0;
+  const leases = {};
+  let signs = 0;
+
+  const lnd = makeLnd({
     fundPsbt: ({}, cbk) => {
       calls++;
 
@@ -52,14 +58,44 @@ const makeFundingLnd = ({failures, transaction}) => {
         return cbk({message: 'FailedToFund'});
       }
 
-      return cbk(null, makeFundResponse({}));
+      const res = makeFundResponse({});
+
+      const locks = res.locked_utxos.map(({id, outpoint}) => ({
+        id: id.toString('hex'),
+        outpoint: `${idOf(outpoint)}:${outpoint.output_index}`,
+      }));
+
+      // Exit early when an input was not released by a past funding
+      if (!!locks.find(({outpoint}) => !!leases[outpoint])) {
+        return cbk({details: 'input is locked'});
+      }
+
+      locks.forEach(({id, outpoint}) => leases[outpoint] = id);
+
+      return cbk(null, res);
     },
-    signPsbt: ({}, cbk) => cbk(null, {
+    signPsbt: ({}, cbk) => cbk(!signs++ ? signErr : null, {
       raw_final_tx: Buffer.from(transaction || finalTransaction, 'hex'),
       signed_psbt: Buffer.from(template.psbt, 'hex'),
     }),
   });
+
+  lnd.wallet.releaseOutput = ({id, outpoint}, cbk) => {
+    // Exit early when the lease is not held with this id
+    if (leases[asOutpoint(outpoint)] !== id.toString('hex')) {
+      return cbk({details: 'output is not locked with this id'});
+    }
+
+    delete leases[asOutpoint(outpoint)];
+
+    return cbk();
+  };
+
+  return lnd;
 };
+
+// A wallet where only the first attempt at signing fails
+const signFailLnd = makeFundingLnd({signErr: 'err'});
 
 const makeArgs = overrides => {
   const args = {
@@ -98,6 +134,20 @@ const tests = [
     args: makeArgs({lnd: undefined}),
     description: 'An lnd object is required to get the max fund amount',
     error: [400, 'ExpectedAuthenticatedLndApiToCalcMaxFundAmount'],
+  },
+  {
+    args: makeArgs({lnd: signFailLnd}),
+    description: 'A failure to sign the maximum returns an error',
+    error: [503, 'UnexpectedErrorSigningPsbt', {err: 'err'}],
+  },
+  {
+    // The same wallet as the failed signing: a leftover lock fails this
+    args: makeArgs({lnd: signFailLnd}),
+    description: 'Inputs locked for a failed signing are released',
+    expected: {
+      fee_tokens_per_vbyte: 24.390243902439025,
+      max_tokens: 48000,
+    },
   },
   {
     args: makeArgs({}),

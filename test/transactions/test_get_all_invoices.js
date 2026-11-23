@@ -6,6 +6,7 @@ const test = require('node:test');
 const getAllInvoices = require('./../../transactions/get_all_invoices');
 
 const asDate = seconds => new Date(seconds * 1e3).toISOString();
+const expirySeconds = Number(makeInvoice({}).expiry);
 const makeId = n => Buffer.alloc(32, n).toString('hex');
 
 const makeRpcInvoice = ({created, id, settled}) => ({
@@ -20,20 +21,36 @@ const makeExpected = ({created, id, settled}) => ({
   cltv_delta: 1,
   confirmed_at: asDate(settled),
   confirmed_index: 1,
+  confirming: 0,
+  confirming_mtokens: '0',
   created_at: asDate(created),
   description: '',
   description_hash: undefined,
-  expires_at: asDate(created + 1),
-  features: [],
+  expires_at: asDate(created + expirySeconds),
+  features: [
+    {bit: 8, is_known: true, is_required: true, type: 'tlv_onion'},
+    {bit: 14, is_known: true, is_required: true, type: 'payment_identifier'},
+    {
+      bit: 17,
+      is_known: true,
+      is_required: false,
+      type: 'multipath_payments_v0',
+    },
+    {bit: 25, is_known: true, is_required: false, type: 'route_blinding'},
+  ],
+  held: 0,
+  held_mtokens: '0',
   id: makeId(id),
   index: 1,
   is_canceled: undefined,
   is_confirmed: true,
+  is_confirming: undefined,
   is_held: undefined,
   is_private: false,
   is_push: undefined,
+  is_secret_revealed: undefined,
   mtokens: '1000',
-  payment: undefined,
+  payment: makeInvoice({}).payment_addr.toString('hex'),
   payments: [],
   received: 1,
   received_mtokens: '1000',

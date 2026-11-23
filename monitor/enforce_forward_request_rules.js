@@ -8,10 +8,11 @@ const {subscribeToBlocks} = require('ln-service');
 const {subscribeToForwardRequests} = require('ln-service');
 const {subscribeToForwards} = require('ln-service');
 
-const htlcId = n => [n.in_channel, n.in_payment, n.out_channel, n.out_payment];
+const htlcId = n => [n.in_channel, n.in_payment].join();
 const {isArray} = Array;
 const {keys} = Object;
 const max = arr => Math.max(...arr);
+const now = () => new Date().toISOString();
 const noHtlcsAllowed = 0;
 const secondsAgoDate = n => new Date(Date.now() - (1000 * n)).toISOString();
 const secondsPerHour = 60 * 60;
@@ -20,6 +21,9 @@ const secondsPerHour = 60 * 60;
 
   Defining `only_allow` will setup an exclusive allowed list of peers or pairs
   Defining `only_disallow` will setup a ban list of peers or pairs
+
+  When an 'error' is emitted the rules stop being enforced, and LND will go
+  back to forwarding without restrictions unless it runs `requireinterceptor`
 
   {
     lnd: <Authenticated LND API Object>
@@ -77,6 +81,7 @@ module.exports = args => {
   const emitter = new EventEmitter();
   const htlcs = {};
   const isChain = args.max_seconds_since_last_block || args.min_activation_age;
+  const node = {};
   const subs = [];
 
   // When nothing is listening to the events, stop listening to forward reqs
@@ -134,6 +139,14 @@ module.exports = args => {
     subForwards.on('error', err => emitError(err));
 
     subForwards.on('forward', htlc => {
+      // Pending HTLCs are identified by their inbound channel and HTLC index
+      const id = htlcId(htlc);
+
+      // Exit early and remove the pending HTLC when resolved
+      if (htlc.is_confirmed || htlc.is_failed) {
+        return delete htlcs[id];
+      }
+
       // Ignore HTLCs that don't have an inbound channel
       if (!htlc.in_channel || !htlc.in_payment) {
         return;
@@ -142,14 +155,6 @@ module.exports = args => {
       // Ignore HTLCs that don't have an outbound channel
       if (!htlc.out_channel || !htlc.out_payment) {
         return;
-      }
-
-      // Forwarding HTLCs are identified by their channels and HTLC indexes
-      const id = htlcId(htlc).join();
-
-      // Exit early and remove the pending HTLC when resolved
-      if (htlc.is_confirmed || htlc.is_failed) {
-        return delete htlcs[id];
       }
 
       // Record the time of this HTLC
@@ -247,6 +252,13 @@ module.exports = args => {
       const list = args.only_allow || args.only_disallow;
 
       try {
+        // The local key is needed to tell which channel key is the peer
+        if (!node.public_key) {
+          const walletInfo = await getWalletInfo({lnd: args.lnd});
+
+          node.public_key = walletInfo.public_key;
+        }
+
         const [inKeys, outKeys] = await asyncMap(edges, async (id) => {
           // Exit early when the channel keys are cached
           if (!!channelKeys[id]) {
@@ -263,11 +275,9 @@ module.exports = args => {
           return keys;
         });
 
-        const [inKey1, inKey2] = inKeys;
-        const [outKey1, outKey2] = outKeys;
-
-        const inKey = !outKeys.includes(inKey1) ? inKey1 : inKey2;
-        const outKey = inKeys.includes(outKey1) ? outKey2 : outKey1;
+        // The peer is the key that is not the local key, in can equal out
+        const inKey = inKeys.find(n => n !== node.public_key);
+        const outKey = outKeys.find(n => n !== node.public_key);
 
         // Look for this pairing in the allow/disallow list
         const isListed = !!list.find(rule => {
@@ -308,10 +318,10 @@ module.exports = args => {
     if (!!args.max_new_pending_per_hour) {
       const after = secondsAgoDate(secondsPerHour);
 
-      // Look for HTLCs that were last updated in the time frame
-      const pendingCount = keys(htlcs).filter(n => htlcs[n] > after).length;
+      // Forget about HTLCs that were last updated before the time frame
+      keys(htlcs).filter(n => htlcs[n] <= after).forEach(n => delete htlcs[n]);
 
-      if (pendingCount >= args.max_new_pending_per_hour) {
+      if (keys(htlcs).length >= args.max_new_pending_per_hour) {
         return reject('TooManyNewPendingHtlcsInThePastHour');
       }
     }
@@ -330,6 +340,11 @@ module.exports = args => {
       if (max(heights) > maxHeight) {
         return reject('WaitingForChannelConfirmationActivation');
       }
+    }
+
+    // Count the HTLC as pending now, LND reports the forward only later
+    if (!!args.max_new_pending_per_hour) {
+      htlcs[htlcId(request)] = now();
     }
 
     // No rules have been violated

@@ -50,6 +50,11 @@ module.exports = ({id, ids, lnd, peer}, cbk) => {
 
         ids.forEach(id => block.push(id));
 
+        // HTLCs are not being stopped when the interception fails
+        sub.on('error', err => {
+          return state.err = [503, 'UnexpectedErrorStoppingAllHtlcs', {err}];
+        });
+
         sub.on('forward_request', request => {
           // Do not allow forwards inbound from the peer
           if (block.includes(request.in_channel)) {
@@ -66,7 +71,7 @@ module.exports = ({id, ids, lnd, peer}, cbk) => {
         });
 
         return asyncUntil(
-          cbk => cbk(null, !state.has_channel),
+          cbk => cbk(state.err, !state.has_channel),
           cbk => {
             return getChannels({lnd, partner_public_key: peer}, (err, res) => {
               if (!!err) {
@@ -92,13 +97,15 @@ module.exports = ({id, ids, lnd, peer}, cbk) => {
                 return setTimeout(cbk, stopHtlcsIntervalMs);
               }
 
-              // Stop blocking forwards
-              sub.removeAllListeners();
-
               return cbk();
             });
           },
-          cbk
+          err => {
+            // Stop blocking forwards
+            sub.removeAllListeners();
+
+            return cbk(err);
+          }
         );
       }],
     },

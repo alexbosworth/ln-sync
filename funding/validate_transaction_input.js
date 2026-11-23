@@ -13,9 +13,10 @@ const hasScript = (output, script) => output.script === script;
 const isBase64 = input => isBase64Encoded({input}).is_base64;
 const isHex = n => !(n.length % 2) && /^[0-9A-F]*$/i.test(n);
 const isPsbt = input => isPsbtEncoded({input}).is_psbt;
+const isSigned = input => !!input.script || !!(input.witness || []).length;
 const isTx = input => isEncodedTransaction({input}).is_transaction;
 const notFoundIndex = -1;
-const txAsOutputs = tx => componentsOfTransaction({transaction: tx}).outputs;
+const txComponents = tx => componentsOfTransaction({transaction: tx});
 const txFromPsbt = psbt => decodePsbt({psbt}).unsigned_transaction;
 const txIdHexLength = 64;
 
@@ -68,8 +69,14 @@ module.exports = ({input, outputs}) => {
   // A PSBT encodes the raw unsigned transaction within it
   const tx = isValidTx ? hex : txFromPsbt(hex);
 
-  // Parse the transaction outputs out of the data
-  const outs = txAsOutputs(tx);
+  // Parse the transaction inputs and outputs out of the data
+  const {inputs, outputs: outs} = txComponents(tx);
+
+  // Some inputs like anchors need no signature data, so only exit early
+  // when a raw transaction has no signed inputs at all
+  if (isValidTx && !inputs.find(input => isSigned(input))) {
+    return {valid: 'Enter a signed transaction, not an unsigned transaction'};
+  }
 
   // Map the output addresses to scripts to allow for easier out script search
   const outputsWithScripts = outputs.map(({address, tokens}) => {
@@ -80,9 +87,20 @@ module.exports = ({input, outputs}) => {
     };
   });
 
+  const paying = [];
+
   // Look through the transaction to find any required outputs that are missing
   const missingOutput = outputsWithScripts.findIndex(({script, tokens}) => {
-    return !outs.find(n => hasValue(n, tokens) && hasScript(n, script));
+    // A transaction output can only pay for a single required output
+    const vout = outs.findIndex((n, i) => {
+      const isPaying = hasValue(n, tokens) && hasScript(n, script);
+
+      return isPaying && !paying.includes(i);
+    });
+
+    paying.push(vout);
+
+    return vout === notFoundIndex;
   });
 
   const missing = outputs[missingOutput];

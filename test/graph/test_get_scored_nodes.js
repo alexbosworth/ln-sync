@@ -4,6 +4,8 @@ const test = require('node:test');
 
 const {getScoredNodes} = require('./../../');
 
+const key = Buffer.alloc(33, 2).toString('hex');
+
 const tests = [
   {
     args: {},
@@ -41,20 +43,46 @@ const tests = [
   {
     args: {
       network: 'btc',
+      request: ({}, cbk) => cbk(null, null, {scores: [null]}),
+    },
+    description: 'A scored node is required to be present',
+    error: [503, 'ExpectedPublicKeyInNodeScoresResult'],
+  },
+  {
+    args: {
+      network: 'btc',
       request: ({}, cbk) => cbk(null, null, {scores: [{public_key: 'a'}]}),
     },
-    description: 'A public key is required in a scored node',
+    description: 'A valid public key is required in a scored node',
+    error: [503, 'ExpectedPublicKeyInNodeScoresResult'],
+  },
+  {
+    args: {
+      network: 'btc',
+      request: ({}, cbk) => cbk(null, null, {
+        scores: [{public_key: [key], score: 1}],
+      }),
+    },
+    description: 'A public key in a scored node is required to be a string',
+    error: [503, 'ExpectedPublicKeyInNodeScoresResult'],
+  },
+  {
+    args: {
+      network: 'btc',
+      request: ({}, cbk) => cbk(null, null, {scores: [{public_key: key}]}),
+    },
+    description: 'A score is required in a scored node',
     error: [503, 'ExpectedScoreInNodeScoresResult'],
   },
   {
     args: {
       network: 'btc',
       request: ({}, cbk) => cbk(null, null, {
-        scores: [{public_key: 'a', score: 1}],
+        scores: [{public_key: key, score: 1}],
       }),
     },
     description: 'A request to the scores API returns scored nodes',
-    expected: {nodes: [{public_key: 'a', score: 1}]},
+    expected: {nodes: [{public_key: key, score: 1}]},
   },
 ];
 

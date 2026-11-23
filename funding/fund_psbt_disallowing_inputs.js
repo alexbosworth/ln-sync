@@ -80,8 +80,9 @@ module.exports = (args, cbk) => {
             transaction_vout: input.transaction_vout,
           },
           (err, res) => {
+            // Keep going on errors so that all taken locks get released
             if (!!err) {
-              return cbk(err);
+              return cbk(null, {err});
             }
 
             return cbk(null, {
@@ -95,7 +96,14 @@ module.exports = (args, cbk) => {
       }],
 
       // Attempt to fund the PSBT
-      fundPsbt: ['lock', asyncReflect(({}, cbk) => {
+      fundPsbt: ['lock', asyncReflect(({lock}, cbk) => {
+        const failed = lock.find(n => !!n.err);
+
+        // Exit early when a disallowed input could not be locked
+        if (!!failed) {
+          return cbk(failed.err);
+        }
+
         return fundPsbt({
           fee_tokens_per_vbyte: args.fee_tokens_per_vbyte,
           lnd: args.lnd,
@@ -106,7 +114,7 @@ module.exports = (args, cbk) => {
 
       // Unlock all the inputs that were locked for disallowing
       unlock: ['fundPsbt', 'lock', ({lock}, cbk) => {
-        return asyncEach(lock, (locked, cbk) => {
+        return asyncEach(lock.filter(n => !n.err), (locked, cbk) => {
           return unlockUtxo({
             id: locked.id,
             lnd: args.lnd,

@@ -136,10 +136,40 @@ const setup = (async () => {
     psbt: base.psbt,
   }).psbt;
 
-  return {basePsbt, invalidAttributePsbt, signedResponse, unsignedResponse};
+  // A response where a peer input is missing its spending output details
+  const incompleteResponse = extendPsbt({
+    inputs: [
+      {
+        non_witness_utxo: prevTx1,
+        partial_sig: [{signature, hash_type: 1, public_key: publicKey}],
+        witness_utxo: witnessUtxo1,
+      },
+      {taproot_key_spend_sig: '22'.repeat(64), witness_utxo: witnessUtxo2},
+      {non_witness_utxo: prevTx3},
+    ],
+    psbt: base.psbt,
+  }).psbt;
+
+  // A response that signs a transaction with a different number of inputs
+  const mismatchedResponse = extendPsbt({
+    inputs: [{
+      partial_sig: [{signature, hash_type: 1, public_key: publicKey}],
+      witness_utxo: witnessUtxo1,
+    }],
+    psbt: template.psbt,
+  }).psbt;
+
+  return {
+    basePsbt,
+    incompleteResponse,
+    mismatchedResponse,
+    invalidAttributePsbt,
+    signedResponse,
+    unsignedResponse,
+  };
 })();
 
-const makeSignLnd = ({response}) => {
+const makeSignLnd = ({address, response}) => {
   const lnd = makeLnd({
     fundPsbt: ({}, cbk) => cbk(null, {
       change_output_index: 1,
@@ -159,7 +189,9 @@ const makeSignLnd = ({response}) => {
     }),
   });
 
-  lnd.default.newAddress = ({}, cbk) => cbk(null, {address: conflictAddress});
+  lnd.default.newAddress = ({}, cbk) => {
+    return cbk(null, {address: address || conflictAddress});
+  };
 
   lnd.wallet.signPsbt = ({}, cbk) => {
     return cbk(null, {signed_psbt: Buffer.from(response, 'hex')});
@@ -213,6 +245,24 @@ const tests = [
     }),
   },
   {
+    description: 'Utxos are required to sign and fund a psbt',
+    error: [400, 'ExpectedArrayOfUtxosToSignAndFundPsbt'],
+    makeArgs: fixtures => ({
+      lnd: makeSignLnd({response: fixtures.signedResponse}),
+      psbt: fixtures.basePsbt,
+      utxos: [],
+    }),
+  },
+  {
+    description: 'Utxos need witness utxos to sign and fund a psbt',
+    error: [400, 'ExpectedWitnessUtxosToSignAndFundPsbt'],
+    makeArgs: fixtures => ({
+      lnd: makeSignLnd({response: fixtures.signedResponse}),
+      psbt: fixtures.basePsbt,
+      utxos: [{transaction_id: id1, transaction_vout: 0}],
+    }),
+  },
+  {
     description: 'A valid psbt is required to sign and fund a psbt',
     error: [400, 'ExpectedValidPsbtToSignAndFundPsbt'],
     makeArgs: fixtures => ({
@@ -231,10 +281,83 @@ const tests = [
     }),
   },
   {
+    description: 'Valid utxo derivations are required to sign a psbt',
+    error: [
+      400,
+      'FailedToAddSigningDetailsToPsbt',
+      {err: 'ExpectedValidPathForBip32Derivation'},
+    ],
+    makeArgs: fixtures => ({
+      lnd: makeSignLnd({response: fixtures.signedResponse}),
+      psbt: fixtures.basePsbt,
+      utxos: [{
+        bip32_derivations: [{
+          fingerprint: '00000000',
+          path: 'path',
+          public_key: publicKey,
+        }],
+        transaction_id: id1,
+        transaction_vout: 0,
+        witness_utxo: witnessUtxo1,
+      }],
+    }),
+  },
+  {
+    description: 'A valid conflict address is required to make a conflict',
+    error: [
+      503,
+      'FailedToCreateConflictingPsbt',
+      {err: 'ExpectedLongerBech32EncodedStringToDecode'},
+    ],
+    makeArgs: fixtures => ({
+      lnd: makeSignLnd({
+        address: 'address',
+        response: fixtures.signedResponse,
+      }),
+      psbt: fixtures.basePsbt,
+      utxos,
+    }),
+  },
+  {
+    description: 'A valid signed psbt is required to fund',
+    error: [
+      503,
+      'UnexpectedInvalidSignedPsbt',
+      {err: 'UnrecognizedMagicBytes'},
+    ],
+    makeArgs: fixtures => ({
+      lnd: makeSignLnd({response: '00'}),
+      psbt: fixtures.basePsbt,
+      utxos,
+    }),
+  },
+  {
+    description: 'A signed psbt for the base psbt is required to fund',
+    error: [
+      503,
+      'FailedToFinalizeSignedPsbt',
+      {err: 'ExpectedMetadataForEachInputToExtendPsbt'},
+    ],
+    makeArgs: fixtures => ({
+      lnd: makeSignLnd({response: fixtures.mismatchedResponse}),
+      psbt: fixtures.basePsbt,
+      utxos,
+    }),
+  },
+  {
     description: 'A signature on an input is required to fund',
     error: [503, 'UnexpectedFailureToPartiallySignBasePsbt'],
     makeArgs: fixtures => ({
       lnd: makeSignLnd({response: fixtures.unsignedResponse}),
+      psbt: fixtures.basePsbt,
+      utxos,
+    }),
+  },
+  {
+    description: 'Every signed input needs a witness utxo to fund',
+    error: [400, 'ExpectedWitnessUtxoForAllInputsInSignedPsbt'],
+    makeArgs: fixtures => ({
+      lnd: makeSignLnd({response: fixtures.incompleteResponse}),
       psbt: fixtures.basePsbt,
       utxos,
     }),

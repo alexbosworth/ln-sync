@@ -42,7 +42,7 @@ const tests = [
   {
     args: makeArgs({ask: ({}, cbk) => cbk({rate: 1e8})}),
     description: 'A regular fee rate is required',
-    error: [400, 'MaxFeePerVbyteExceeded', {maximum: 100}],
+    error: [400, 'MaxFeePerVbyteExceeded', {maximum: 101.2}],
   },
   {
     args: makeArgs({}),

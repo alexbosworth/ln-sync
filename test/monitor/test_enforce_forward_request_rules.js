@@ -56,7 +56,7 @@ const makeForwardRequest = ([inbound, outbound]) => ({
   payment_hash: Buffer.alloc(32),
 });
 
-const makeHtlcEvent = ({id, out, type}) => ({
+const makeHtlcEvent = ({id, ns, out, type}) => ({
   event_type: type === 'settle' ? 'FORWARD' : type,
   forward_event: type === 'settle' ? undefined : {
     info: {
@@ -71,7 +71,7 @@ const makeHtlcEvent = ({id, out, type}) => ({
   outgoing_channel_id: out1.number,
   outgoing_htlc_id: out || id,
   settle_event: type === 'settle' ? {preimage: Buffer.alloc(32)} : undefined,
-  timestamp_ns: nowNs(),
+  timestamp_ns: ns || nowNs(),
 });
 
 const makeSubscription = ({delay, emit}) => {
@@ -127,7 +127,10 @@ const makeLnd = overrides => {
           return cbk('err');
         }
 
-        return cbk(null, getInfoResponse);
+        // The local node is one of the nodes in every channel
+        const info = {...getInfoResponse, identity_pubkey: me};
+
+        return cbk(null, info);
       },
     },
     router: {
@@ -308,6 +311,17 @@ const tests = [
   },
   {
     args: makeArgs({
+      lnd: makeLnd({requests: [[in1, in2], [in2, in1]]}),
+      only_disallow: [{inbound_peer: alice, outbound_peer: alice}],
+    }),
+    description: 'A forward back to the inbound peer can be disallowed',
+    expected: [
+      rejected([in1, in2], 'RoutingPairSpecifiedInDenyForwardsList'),
+      rejected([in2, in1], 'RoutingPairSpecifiedInDenyForwardsList'),
+    ],
+  },
+  {
+    args: makeArgs({
       lnd: makeLnd({requests: [[in1, unknown]]}),
       only_allow: [pair],
     }),
@@ -351,6 +365,24 @@ const tests = [
       max_new_pending_per_hour: 2,
     }),
     description: 'A forward is accepted when few HTLCs are pending',
+    expected: [],
+  },
+  {
+    args: makeArgs({
+      lnd: makeLnd({requests: [[in1, out1], [in1, out1]]}),
+      max_new_pending_per_hour: 1,
+    }),
+    description: 'An accepted forward counts as pending right away',
+    expected: [
+      rejected([in1, out1], 'TooManyNewPendingHtlcsInThePastHour'),
+    ],
+  },
+  {
+    args: makeArgs({
+      lnd: makeLnd({htlcs: [{id: '1', ns: '1', type: 'FORWARD'}]}),
+      max_new_pending_per_hour: 1,
+    }),
+    description: 'A forward is accepted when pending HTLCs are not new',
     expected: [],
   },
   {

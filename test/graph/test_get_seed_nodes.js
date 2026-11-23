@@ -52,6 +52,27 @@ const tests = [
     error: [503, 'ExpectedPublicKeyInSeedNodesResult'],
   },
   {
+    args: makeArgs({request: ({}, cbk) => cbk(null, null, {nodes: [null]})}),
+    description: 'Nodes are expected to be present',
+    error: [503, 'ExpectedPublicKeyInSeedNodesResult'],
+  },
+  {
+    args: makeArgs({
+      request: ({}, cbk) => cbk(null, null, {nodes: [{public_key: 'a'}]}),
+    }),
+    description: 'Nodes with valid public keys are expected',
+    error: [503, 'ExpectedPublicKeyInSeedNodesResult'],
+  },
+  {
+    args: makeArgs({
+      request: ({}, cbk) => cbk(null, null, {
+        nodes: [{public_key: [Buffer.alloc(33, 2).toString('hex')]}],
+      }),
+    }),
+    description: 'Nodes with string public keys are expected',
+    error: [503, 'ExpectedPublicKeyInSeedNodesResult'],
+  },
+  {
     args: makeArgs({}),
     description: 'Balanced seed nodes are returned',
     expected: {nodes: [{public_key: Buffer.alloc(33, 2).toString('hex')}]},
@@ -60,13 +81,14 @@ const tests = [
     args: makeArgs({
       network: 'btctestnet',
       request: ({url}, cbk) => cbk(null, null, {
-        nodes: [{is_balanced: true, public_key: url}],
+        nodes: [{
+          is_balanced: url === 'https://yalls.org/v0/graph/list/testnet',
+          public_key: Buffer.alloc(33, 2).toString('hex'),
+        }],
       }),
     }),
     description: 'Seed nodes are requested for the specified network',
-    expected: {
-      nodes: [{public_key: 'https://yalls.org/v0/graph/list/testnet'}],
-    },
+    expected: {nodes: [{public_key: Buffer.alloc(33, 2).toString('hex')}]},
   },
 ];
 

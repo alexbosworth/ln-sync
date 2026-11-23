@@ -1,5 +1,20 @@
 # Versions
 
+## 9.0.0
+
+### Breaking Changes
+
+- `assembleUnsignedPsbt`: Errors are now in `[code, message, details]` form
+- `enforceForwardRequestRules`: `max_new_pending_per_hour` now counts a
+    forward as pending as soon as it is accepted
+- `enforceForwardRequestRules`: `only_allow` and `only_disallow` now require
+    access to `getWalletInfo`
+- `getAllInvoices`: `received` and `received_mtokens` no longer count held
+    payments or payments awaiting final settlement, these are now totaled in
+    `held`, `held_mtokens`, `confirming` and `confirming_mtokens`
+- `getFundedTransaction`: `id` for a signed PSBT is now the id of the signed
+    transaction instead of the id of the unsigned transaction
+
 ## 8.1.0
 
 - `getMaxFundingValue`: Add method to get the max value for a funding output

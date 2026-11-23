@@ -110,12 +110,13 @@ module.exports = ({ask, logger, outputs}, cbk) => {
         try {
           const decoded = decodePsbt({psbt: fundingHex});
 
-          const {id} = idForTransaction({
-            transaction: decoded.unsigned_transaction,
-          });
-
           // Attempt to extract the raw tx from the provided PSBT
           const {transaction} = transactionFromPsbt({psbt: fundingHex});
+
+          // Signing changes the id when there are non-native-witness inputs
+          const {id} = idForTransaction({
+            transaction: transaction || decoded.unsigned_transaction,
+          });
 
           return {id, transaction, psbt: fundingHex};
         } catch (err) {

@@ -108,6 +108,7 @@ module.exports = ({description, lnd, logger, transaction}, cbk) => {
         ({getHeight, tx}, cbk) =>
       {
         let isConfirmed = false;
+        let isFailed = false;
         const [{script}] = tx.outputs;
 
         // Subscribe to blocks
@@ -124,6 +125,13 @@ module.exports = ({description, lnd, logger, transaction}, cbk) => {
         });
 
         const returnError = err => {
+          // Exit early when a result was already returned
+          if (!!isConfirmed || !!isFailed) {
+            return;
+          }
+
+          isFailed = true;
+
           [blocksSub, confirmationSub].forEach(n => n.removeAllListeners());
 
           return cbk([503, 'UnexpectedErrorBroadcastingTransaction', {err}]);

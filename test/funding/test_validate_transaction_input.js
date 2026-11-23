@@ -1,8 +1,33 @@
 const {deepEqual} = require('node:assert').strict;
 const test = require('node:test');
 const {throws} = require('node:assert').strict;
+const {transactionFromComponents} = require('@alexbosworth/blockchain');
 
 const method = require('./../../funding/validate_transaction_input');
+
+const address = 'tb1qqurswpc8qurswpc8qurswpc8qurswpc800zzll';
+
+// Make a transaction that pays to the address with every output
+const makeTransaction = ({bare, tokens, witness}) => {
+  // Bare inputs spend outputs that need neither a script nor a witness
+  const witnesses = [witness].concat(new Array(bare || 0).fill());
+
+  return transactionFromComponents({
+    inputs: witnesses.map((witness, vout) => ({
+      vout,
+      witness,
+      id: Buffer.alloc(32, 1).toString('hex'),
+      script: '',
+      sequence: 0,
+    })),
+    locktime: 0,
+    outputs: tokens.map(tokens => ({
+      tokens,
+      script: '0014' + Buffer.alloc(20, 7).toString('hex'),
+    })),
+    version: 2,
+  }).transaction;
+};
 
 const tests = [
   {
@@ -59,6 +84,37 @@ const tests = [
       outputs: [],
     },
     description: 'A valid hex TX is accepted',
+    expected: {valid: true},
+  },
+  {
+    args: {input: makeTransaction({tokens: [5]}), outputs: []},
+    description: 'An unsigned TX is not accepted',
+    expected: {
+      valid: 'Enter a signed transaction, not an unsigned transaction',
+    },
+  },
+  {
+    args: {
+      input: makeTransaction({bare: 1, tokens: [5], witness: ['00']}),
+      outputs: [{address, tokens: 5}],
+    },
+    description: 'A signed TX can spend an input with no signature data',
+    expected: {valid: true},
+  },
+  {
+    args: {
+      input: makeTransaction({tokens: [5], witness: ['00']}),
+      outputs: [{address, tokens: 5}, {address, tokens: 5}],
+    },
+    description: 'An output cannot pay for two required outputs',
+    expected: {valid: `Missing send of 0.00000005 to ${address}`},
+  },
+  {
+    args: {
+      input: makeTransaction({tokens: [5, 5], witness: ['00']}),
+      outputs: [{address, tokens: 5}, {address, tokens: 5}],
+    },
+    description: 'A signed TX paying all required outputs is accepted',
     expected: {valid: true},
   },
   {

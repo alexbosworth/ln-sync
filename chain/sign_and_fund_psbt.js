@@ -40,6 +40,9 @@ const txComponents = transaction => componentsOfTransaction({transaction});
 
   To allow for funding a channel, a dummy "finalized" PSBT is returned
 
+  The PSBT outputs are not checked: make sure that the PSBT pays out what is
+  expected before calling this method, local inputs will be signed as-is
+
   {
     lnd: <Authenticated Signing LND API Object>
     psbt: <Base Funding With Bare Inputs PSBT Hex String>
@@ -80,8 +83,12 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
           return cbk([400, 'ExpectedUnsignedPsbtToSignAndFundPsbt']);
         }
 
-        if (!isArray(utxos)) {
+        if (!isArray(utxos) || !utxos.length) {
           return cbk([400, 'ExpectedArrayOfUtxosToSignAndFundPsbt']);
+        }
+
+        if (!!utxos.find(n => !n || !n.witness_utxo)) {
+          return cbk([400, 'ExpectedWitnessUtxosToSignAndFundPsbt']);
         }
 
         return cbk();
@@ -119,10 +126,8 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
         }
       })],
 
-      // Extend the PSBT with the derivation paths
-      psbtToSign: ['funding', ({funding}, cbk) => {
-        const tx = txComponents(funding.unsigned_transaction);
-
+      // Make sure that the PSBT inputs only have the expected attributes
+      checkInputs: ['funding', ({funding}, cbk) => {
         // Look to see if there is an input with an unexpected attribute
         const invalidInput = funding.inputs.find(input => {
           return keys(input).find(key => !allowedAttributes.includes(key));
@@ -136,24 +141,35 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
           ]);
         }
 
-        // Populate the inputs with signing instructions
-        const inputs = funding.inputs.map((input, vin) => {
-          const outpoint = spendAsOutpoint(tx.inputs[vin]);
-
-          // Look for relevant signing instructions
-          const utxo = utxos.find(n => inputAsOutpoint(n) === outpoint) || {};
-
-          return {
-            bip32_derivations: utxo.bip32_derivations,
-            non_witness_utxo: input.non_witness_utxo,
-            sighash_type: !!input.non_witness_utxo ? hashAll : hashDefault,
-            witness_utxo: input.witness_utxo,
-          };
-        });
-
-        // Extend the base PSBT with relevant signing information
-        return cbk(null, {psbt: extendPsbt({inputs, psbt}).psbt});
+        return cbk();
       }],
+
+      // Extend the PSBT with the derivation paths
+      psbtToSign: ['checkInputs', 'funding', asyncify(({funding}) => {
+        try {
+          const tx = txComponents(funding.unsigned_transaction);
+
+          // Populate the inputs with signing instructions
+          const inputs = funding.inputs.map((input, vin) => {
+            const outpoint = spendAsOutpoint(tx.inputs[vin]);
+
+            // Look for relevant signing instructions
+            const utxo = utxos.find(n => inputAsOutpoint(n) === outpoint);
+
+            return {
+              bip32_derivations: (utxo || {}).bip32_derivations,
+              non_witness_utxo: input.non_witness_utxo,
+              sighash_type: !!input.non_witness_utxo ? hashAll : hashDefault,
+              witness_utxo: input.witness_utxo,
+            };
+          });
+
+          // Extend the base PSBT with relevant signing information
+          return {psbt: extendPsbt({inputs, psbt}).psbt};
+        } catch (err) {
+          throw [400, 'FailedToAddSigningDetailsToPsbt', {err: err.message}];
+        }
+      })],
 
       // Find the conflicting amount to send to the refund address
       getConflictAmount: [
@@ -181,48 +197,52 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
         'createConflictAddress',
         'getConflictAmount',
         'getHeight',
-        ({
+        asyncify(({
           conflictingInput,
           createConflictAddress,
           getConflictAmount,
           getHeight,
-        },
-        cbk) =>
+        }) =>
       {
-        const {program} = decodeBech32Address({
-          address: createConflictAddress.address,
-        });
+        try {
+          const {program} = decodeBech32Address({
+            address: createConflictAddress.address,
+          });
 
-        // Make the base conflict PSBT sending the max amount to a P2TR address
-        const {psbt} = createPsbt({
-          outputs: [{
-            script: bufferAsHex(p2wpkhOutputScript({hash: program}).script),
-            tokens: getConflictAmount.max_tokens,
-          }],
-          timelock: getHeight.current_block_height + defaultBlocksBuffer,
-          utxos: [{
-            id: conflictingInput.transaction_id,
-            sequence: minSequence,
-            vout: conflictingInput.transaction_vout,
-          }],
-        });
+          // Make the base conflict PSBT sending the max amount to the address
+          const {psbt} = createPsbt({
+            outputs: [{
+              script: bufferAsHex(p2wpkhOutputScript({hash: program}).script),
+              tokens: getConflictAmount.max_tokens,
+            }],
+            timelock: getHeight.current_block_height + defaultBlocksBuffer,
+            utxos: [{
+              id: conflictingInput.transaction_id,
+              sequence: minSequence,
+              vout: conflictingInput.transaction_vout,
+            }],
+          });
 
-        const base = decodePsbt({psbt});
-        const conflict = conflictingInput;
+          const base = decodePsbt({psbt});
+          const conflict = conflictingInput;
+          const isLegacy = !!conflict.non_witness_utxo;
 
-        // Pull the derivation paths into the PSBT to inform signing
-        const inputs = base.inputs.map(input => {
-          return {
-            bip32_derivations: conflict.bip32_derivations,
-            non_witness_utxo: conflict.non_witness_utxo,
-            sighash_type: !!conflict.non_witness_utxo ? hashAll : hashDefault,
-            witness_utxo: conflict.witness_utxo,
-          };
-        });
+          // Pull the derivation paths into the PSBT to inform signing
+          const inputs = base.inputs.map(input => {
+            return {
+              bip32_derivations: conflict.bip32_derivations,
+              non_witness_utxo: conflict.non_witness_utxo,
+              sighash_type: isLegacy ? hashAll : hashDefault,
+              witness_utxo: conflict.witness_utxo,
+            };
+          });
 
-        // Extend the base PSBT with relevant signing information
-        return cbk(null, extendPsbt({inputs, psbt}).psbt);
-      }],
+          // Extend the base PSBT with relevant signing information
+          return extendPsbt({inputs, psbt}).psbt;
+        } catch (err) {
+          throw [503, 'FailedToCreateConflictingPsbt', {err: err.message}];
+        }
+      })],
 
       // Sign and finalize the conflicting PSBT to get the conflict transaction
       signConflict: ['conflict', ({conflict}, cbk) => {
@@ -234,10 +254,17 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
         return partiallySignPsbt({lnd, psbt: psbtToSign.psbt}, cbk);
       }],
 
-      // Set the final signature into the base PSBT
-      finalize: ['signPsbt', ({signPsbt}, cbk) => {
-        const signatures = decodePsbt({psbt: signPsbt.psbt});
+      // Decode the partially signed PSBT to get the signatures
+      signatures: ['signPsbt', asyncify(({signPsbt}) => {
+        try {
+          return decodePsbt({psbt: signPsbt.psbt});
+        } catch (err) {
+          throw [503, 'UnexpectedInvalidSignedPsbt', {err: err.message}];
+        }
+      })],
 
+      // Make sure that the signed PSBT has what is needed to finalize it
+      checkSignatures: ['signatures', ({signatures}, cbk) => {
         // Select the transaction inputs that have a signature
         const inputsWithSignatures = signatures.inputs.filter(input => {
           return !!input.partial_sig || !!input.taproot_key_spend_sig;
@@ -248,82 +275,99 @@ module.exports = ({lnd, psbt, utxos}, cbk) => {
           return cbk([503, 'UnexpectedFailureToPartiallySignBasePsbt']);
         }
 
-        // Create a template transaction to use for the finalized PSBT
-        const tx = txComponents(signatures.unsigned_transaction);
+        // The finalized PSBT needs the spending output of every input
+        if (!!signatures.inputs.find(n => !n.witness_utxo)) {
+          return cbk([400, 'ExpectedWitnessUtxoForAllInputsInSignedPsbt']);
+        }
 
-        const witnesses = signatures.inputs.map(input => {
-          // Exit early when there is no local signature present
-          if (!input.partial_sig && !input.taproot_key_spend_sig) {
-            return [dummySignature];
-          }
-
-          // Exit early when setting the signature for v1 Taproot
-          if (!!input.taproot_key_spend_sig) {
-            return [input.taproot_key_spend_sig];
-          }
-
-          // Set the public key and signature for v0 SegWit
-          const [partial] = input.partial_sig;
-
-          return [partial.signature + hashAllFlag, partial.public_key];
-        });
-
-        // Attach the witness stacks to the template transaction
-        const {transaction} = transactionFromComponents({
-          inputs: tx.inputs.map((input, vin) => ({
-            id: input.id,
-            script: input.script,
-            sequence: input.sequence,
-            vout: input.vout,
-            witness: witnesses[vin],
-          })),
-          locktime: tx.locktime,
-          outputs: tx.outputs,
-          version: tx.version,
-        });
-
-        // Convert the transaction into a finalized PSBT
-        const fundingPsbt = unextractTransaction({
-          transaction,
-          spending: notEmpty(signatures.inputs.map(n => n.non_witness_utxo)),
-          utxos: notEmpty(signatures.inputs.map((input, vin) => {
-            return {
-              vin,
-              script_pub: input.witness_utxo.script_pub,
-              tokens: input.witness_utxo.tokens,
-            };
-          })),
-        });
-
-        return cbk(null, {psbt: fundingPsbt.psbt});
+        return cbk();
       }],
+
+      // Set the final signature into the base PSBT
+      finalize: [
+        'checkSignatures',
+        'signatures',
+        asyncify(({signatures}) =>
+      {
+        try {
+          // Create a template transaction to use for the finalized PSBT
+          const tx = txComponents(signatures.unsigned_transaction);
+
+          const witnesses = signatures.inputs.map(input => {
+            // Exit early when there is no local signature present
+            if (!input.partial_sig && !input.taproot_key_spend_sig) {
+              return [dummySignature];
+            }
+
+            // Exit early when setting the signature for v1 Taproot
+            if (!!input.taproot_key_spend_sig) {
+              return [input.taproot_key_spend_sig];
+            }
+
+            // Set the public key and signature for v0 SegWit
+            const [partial] = input.partial_sig;
+
+            return [partial.signature + hashAllFlag, partial.public_key];
+          });
+
+          // Attach the witness stacks to the template transaction
+          const {transaction} = transactionFromComponents({
+            inputs: tx.inputs.map((input, vin) => ({
+              id: input.id,
+              script: input.script,
+              sequence: input.sequence,
+              vout: input.vout,
+              witness: witnesses[vin],
+            })),
+            locktime: tx.locktime,
+            outputs: tx.outputs,
+            version: tx.version,
+          });
+
+          const spending = signatures.inputs.map(n => n.non_witness_utxo);
+
+          // Convert the transaction into a finalized PSBT
+          const fundingPsbt = unextractTransaction({
+            transaction,
+            spending: notEmpty(spending),
+            utxos: signatures.inputs.map((input, vin) => {
+              return {
+                vin,
+                script_pub: input.witness_utxo.script_pub,
+                tokens: input.witness_utxo.tokens,
+              };
+            }),
+          });
+
+          // Add the signatures into the base PSBT so that it's signed
+          const extended = extendPsbt({
+            psbt,
+            inputs: signatures.inputs.map(input => {
+              return {
+                non_witness_utxo: input.non_witness_utxo,
+                partial_sig: input.partial_sig,
+                taproot_key_spend_sig: input.taproot_key_spend_sig,
+                witness_utxo: input.witness_utxo,
+              };
+            }),
+          });
+
+          return {funding: fundingPsbt.psbt, psbt: extended.psbt};
+        } catch (err) {
+          throw [503, 'FailedToFinalizeSignedPsbt', {err: err.message}];
+        }
+      })],
 
       // Final funded transactions resolution
       result: [
         'finalize',
         'signConflict',
-        'signPsbt',
-        ({finalize, signConflict, signPsbt}, cbk) =>
+        ({finalize, signConflict}, cbk) =>
       {
-        const signed = decodePsbt({psbt: signPsbt.psbt});
-
-        // Add the resulting signatures into the base PSBT so that it's signed
-        const extended = extendPsbt({
-          psbt,
-          inputs: signed.inputs.map(input => {
-            return {
-              non_witness_utxo: input.non_witness_utxo,
-              partial_sig: input.partial_sig,
-              taproot_key_spend_sig: input.taproot_key_spend_sig,
-              witness_utxo: input.witness_utxo,
-            };
-          }),
-        });
-
         return cbk(null, {
           conflict: signConflict.transaction,
-          funding: finalize.psbt,
-          psbt: extended.psbt,
+          funding: finalize.funding,
+          psbt: finalize.psbt,
         });
       }],
     },

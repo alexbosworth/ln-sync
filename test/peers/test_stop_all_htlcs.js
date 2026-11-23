@@ -25,7 +25,7 @@ const makeForwardRequest = ({inbound, outbound}) => ({
   payment_hash: Buffer.alloc(32),
 });
 
-const makeLnd = ({channels, err}) => {
+const makeLnd = ({channels, err, intercept}) => {
   let call = 0;
 
   return {
@@ -45,6 +45,13 @@ const makeLnd = ({channels, err}) => {
 
         sub.cancel = () => {};
         sub.write = ({}) => {};
+
+        // Exit early when the interception should fail
+        if (!!intercept) {
+          setTimeout(() => sub.emit('error', intercept), 10);
+
+          return sub;
+        }
 
         // Forwards with the peer are rejected and others are accepted
         [
@@ -98,6 +105,13 @@ const tests = [
     args: makeArgs({lnd: makeLnd({err: 'err'})}),
     description: 'A failure to get channels returns an error',
     error: [503, 'UnexpectedGetChannelsError', {err: 'err'}],
+  },
+  {
+    args: makeArgs({
+      lnd: makeLnd({channels: [['1'], ['1']], intercept: 'err'}),
+    }),
+    description: 'A failure to intercept forwards returns an error',
+    error: [503, 'UnexpectedErrorStoppingAllHtlcs', {err: 'err'}],
   },
   {
     args: makeArgs({}),

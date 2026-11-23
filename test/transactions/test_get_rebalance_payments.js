@@ -47,7 +47,7 @@ const makeExpectedPayment = id => ({
     tokens: 1,
     total_mtokens: '1000',
   }],
-  request: makeInvoice({}).payment_request,
+  request: makePaymentData({}).payment_request,
   safe_fee: 1,
   safe_tokens: 2,
   secret: Buffer.alloc(32).toString('hex'),

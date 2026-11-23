@@ -82,7 +82,9 @@ const makeBroadcastLnd = overrides => {
   lnd.wallet.publishTransaction = ({}, cbk) => {
     // Exit early when publishing the transaction should fail
     if (!!overrides.is_publish_failing) {
-      return cbk({message: 'PublishFailed'});
+      const fail = () => cbk({message: 'PublishFailed'});
+
+      return setTimeout(fail, overrides.publish_delay_ms || 0);
     }
 
     return setTimeout(() => cbk(null, {}), overrides.publish_delay_ms || 1);
@@ -188,6 +190,30 @@ const tests = [
     }),
     description: 'A broadcast failure stops the broadcast',
     error: [503, 'UnexpectedErrorBroadcastingTransaction'],
+  },
+  {
+    args: makeArgs({
+      lnd: makeBroadcastLnd({
+        blocks: [[1], [2, 3]],
+        confirmations: [],
+        is_publish_failing: true,
+        publish_delay_ms: 20,
+      }),
+    }),
+    description: 'A second broadcast failure is ignored',
+    error: [503, 'UnexpectedErrorBroadcastingTransaction'],
+  },
+  {
+    args: makeArgs({
+      lnd: makeBroadcastLnd({
+        blocks: [[1], [2]],
+        confirmations: [700],
+        is_publish_failing: true,
+        publish_delay_ms: 40,
+      }),
+    }),
+    description: 'A broadcast failure after confirmation is ignored',
+    expected: {transaction_confirmed_in_block: 700},
   },
   {
     args: makeArgs({

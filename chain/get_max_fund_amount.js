@@ -156,23 +156,33 @@ module.exports = (args, cbk) => {
       }],
 
       // Sign the maximum to get the raw transaction for fee calculation
-      finalizeMaximum: ['createMaximum', ({createMaximum}, cbk) => {
+      finalizeMaximum: [
+        'createMaximum',
+        asyncReflect(({createMaximum}, cbk) =>
+      {
         return signPsbt({lnd: args.lnd, psbt: createMaximum.psbt}, cbk);
-      }],
+      })],
 
       // Derive the maximum spendable tokens from the final TX
-      max: ['finalizeMaximum', ({finalizeMaximum}, cbk) => {
+      max: [
+        'finalizeMaximum',
+        'unlockMaximum',
+        ({finalizeMaximum}, cbk) =>
+      {
+        // Exit early when signing failed, after the UTXOs were unlocked
+        if (!!finalizeMaximum.error) {
+          return cbk(finalizeMaximum.error);
+        }
+
+        const {transaction} = finalizeMaximum.value;
+
         // The fee will be the difference between in tokens and out tokens
         const inTokens = sumOf(args.inputs.map(n => n.tokens));
 
         // Use the real transaction to confirm the maximum values
-        const {outputs} = componentsOfTransaction({
-          transaction: finalizeMaximum.transaction,
-        });
+        const {outputs} = componentsOfTransaction({transaction});
 
-        const {vsize} = sizeOfTransaction({
-          transaction: finalizeMaximum.transaction,
-        });
+        const {vsize} = sizeOfTransaction({transaction});
 
         const maxTokens = sumOf(outputs.map(n => n.tokens));
 
